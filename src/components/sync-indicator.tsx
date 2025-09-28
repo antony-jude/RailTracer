@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Cloud, CloudOff } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function SyncIndicator() {
   const [isOnline, setIsOnline] = useState<boolean | null>(null);
@@ -32,15 +32,17 @@ export function SyncIndicator() {
   const colorClass = isOnline ? 'text-green-500' : 'text-amber-500';
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Icon className={`h-5 w-5 ${colorClass}`} />
-        </div>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{tooltipText}</p>
-      </TooltipContent>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Icon className={`h-5 w-5 ${colorClass}`} />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{tooltipText}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
