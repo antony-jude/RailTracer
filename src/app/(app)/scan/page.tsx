@@ -1,23 +1,26 @@
+
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { QrCode, Camera } from 'lucide-react';
-import { getComponents } from '@/lib/data';
+import { QrCode } from 'lucide-react';
 import { MaterialStatusDetector } from '@/components/ai/material-status-detector';
 import { Geolocation } from '@/components/geolocation';
 import { Separator } from '@/components/ui/separator';
 import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import jsQR from 'jsqr';
 
 export default function ScanPage() {
   const router = useRouter();
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  
+  const [scanActive, setScanActive] = useState(false);
+  const [scanResult, setScanResult] = useState<string | null>(null);
+
   useEffect(() => {
     const getCameraPermission = async () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -33,6 +36,7 @@ export default function ScanPage() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         setHasCameraPermission(true);
+        setScanActive(true);
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -49,19 +53,74 @@ export default function ScanPage() {
     };
 
     getCameraPermission();
+
+    return () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+        }
+    }
   }, [toast]);
 
+  useEffect(() => {
+    let animationFrameId: number;
 
-  const handleScan = () => {
-    // Simulate scanning a QR code by picking a random component
-    const components = getComponents();
-    const randomComponent = components[Math.floor(Math.random() * components.length)];
-    toast({
-        title: "QR Code Scanned",
-        description: `Redirecting to component ${randomComponent.id}...`
-    })
-    router.push(`/components/${randomComponent.id}`);
-  };
+    const tick = () => {
+      if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current && scanActive) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+
+        if (ctx) {
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert',
+            });
+
+            if (code) {
+                setScanActive(false);
+                setScanResult(code.data);
+                
+                try {
+                    const url = new URL(code.data);
+                    const pathParts = url.pathname.split('/');
+                    const componentId = pathParts[pathParts.length - 1];
+
+                    if (componentId && url.hostname.includes('railtracer.com')) {
+                        toast({
+                            title: "QR Code Scanned",
+                            description: `Redirecting to component ${componentId}...`
+                        });
+                        router.push(`/components/${componentId}`);
+                    } else {
+                        throw new Error("Invalid QR code format.");
+                    }
+                } catch(e) {
+                    toast({
+                        variant: 'destructive',
+                        title: "Invalid QR Code",
+                        description: "This QR code is not a valid RailTracer component link.",
+                    });
+                     // Briefly show the error, then restart scanning
+                    setTimeout(() => setScanActive(true), 3000);
+                }
+            }
+        }
+      }
+      animationFrameId = requestAnimationFrame(tick);
+    };
+
+    if (scanActive) {
+      animationFrameId = requestAnimationFrame(tick);
+    }
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [scanActive, router, toast]);
 
   return (
     <div className="space-y-6">
@@ -72,12 +131,16 @@ export default function ScanPage() {
                 </div>
                 <CardTitle className="mt-4 font-headline text-2xl">Scan Component QR Code</CardTitle>
                 <CardDescription>
-                    Point your device's camera at the laser-engraved QR tag on the railway asset.
+                    {scanActive ? "Point your camera at a QR code to scan it." : "Scan complete."}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="w-full max-w-sm mx-auto aspect-video bg-muted rounded-lg flex items-center justify-center mb-6 overflow-hidden">
+                <div className="w-full max-w-sm mx-auto aspect-video bg-muted rounded-lg flex items-center justify-center mb-6 overflow-hidden relative">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                    <canvas ref={canvasRef} className="hidden" />
+                     {scanActive && (
+                        <div className="absolute inset-0 border-4 border-accent rounded-lg animate-pulse"></div>
+                    )}
                 </div>
 
                 {hasCameraPermission === false && (
@@ -88,11 +151,6 @@ export default function ScanPage() {
                         </AlertDescription>
                     </Alert>
                 )}
-
-                <Button size="lg" className="w-full max-w-sm mx-auto" onClick={handleScan}>
-                    <Camera className="mr-2 h-5 w-5" />
-                    Simulate Scan
-                </Button>
             </CardContent>
         </Card>
 
