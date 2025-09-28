@@ -29,10 +29,9 @@ const generateHistory = (componentId: string, baseStatus: ComponentState) => {
     currentDate.setMonth(currentDate.getMonth() - (Math.floor(Math.random() * 3) + 1));
     const inspector = users[Math.floor(Math.random() * users.length)];
     
-    // Make status changes somewhat logical
     if (i > 0) {
       if (history[i-1].status === 'Damaged') {
-        currentStatus = 'Verified'; // Assume repair
+        currentStatus = 'Verified'; 
       } else {
         currentStatus = statuses[Math.floor(Math.random() * statuses.length)];
       }
@@ -47,7 +46,7 @@ const generateHistory = (componentId: string, baseStatus: ComponentState) => {
       status: currentStatus,
     });
   }
-  return history.reverse(); // Newest first
+  return history.reverse();
 };
 
 export const components: RailwayComponent[] = [
@@ -60,6 +59,9 @@ export const components: RailwayComponent[] = [
     installDate: '2022-01-15',
     currentState: 'Verified',
     history: [],
+    vendor: 'RailTech Corp',
+    warrantyUntil: '2032-01-15',
+    supplyDate: '2021-12-20',
   },
   {
     id: 'BK-101-C',
@@ -70,6 +72,9 @@ export const components: RailwayComponent[] = [
     installDate: '2021-11-20',
     currentState: 'Unverified',
     history: [],
+    vendor: 'Durable Brakes Inc.',
+    warrantyUntil: '2026-11-20',
+    supplyDate: '2021-10-15',
   },
   {
     id: 'AXL-99B-F',
@@ -80,6 +85,9 @@ export const components: RailwayComponent[] = [
     installDate: '2023-03-10',
     currentState: 'Damaged',
     history: [],
+    vendor: 'Axle & Wheel Co.',
+    warrantyUntil: '2028-03-10',
+    supplyDate: '2023-02-01',
   },
   {
     id: 'CPL-45D-R',
@@ -90,6 +98,9 @@ export const components: RailwayComponent[] = [
     installDate: '2020-07-22',
     currentState: 'Verified',
     history: [],
+    vendor: 'Secure Couplings Ltd.',
+    warrantyUntil: '2025-07-22',
+    supplyDate: '2020-06-11',
   },
   {
     id: 'SUS-P14-E',
@@ -100,6 +111,9 @@ export const components: RailwayComponent[] = [
     installDate: '2022-08-01',
     currentState: 'Unverified',
     history: [],
+    vendor: 'SpringMasters',
+    warrantyUntil: '2027-08-01',
+    supplyDate: '2022-07-15',
   },
     {
     id: 'HVAC-007-B',
@@ -110,13 +124,66 @@ export const components: RailwayComponent[] = [
     installDate: '2023-05-19',
     currentState: 'Verified',
     history: [],
+    vendor: 'ClimateRail',
+    warrantyUntil: '2028-05-19',
+    supplyDate: '2023-04-22',
+  },
+  {
+    id: 'ERC-33A-1',
+    name: 'Elastic Rail Clip 1',
+    type: 'Elastic Rail Clip',
+    qrCode: 'https://railtracer.com/components/ERC-33A-1',
+    location: 'Section 5, North Line',
+    installDate: '2023-01-20',
+    currentState: 'Verified',
+    history: [],
+    vendor: 'FastenRight',
+    warrantyUntil: '2033-01-20',
+    supplyDate: '2022-12-10',
+  },
+  {
+    id: 'RP-B2-12',
+    name: 'Rail Pad 12',
+    type: 'Rail Pad',
+    qrCode: 'https://railtracer.com/components/RP-B2-12',
+    location: 'Section 5, North Line',
+    installDate: '2023-01-20',
+    currentState: 'Verified',
+    history: [],
+    vendor: 'PadWorks',
+    warrantyUntil: '2028-01-20',
+    supplyDate: '2022-12-10',
+  },
+  {
+    id: 'LNR-S1-45',
+    name: 'Liner 45',
+    type: 'Liner',
+    qrCode: 'https://railtracer.com/components/LNR-S1-45',
+    location: 'Section 5, North Line',
+    installDate: '2023-01-20',
+    currentState: 'Unverified',
+    history: [],
+    vendor: 'TrackLiners Inc.',
+    warrantyUntil: '2030-01-20',
+    supplyDate: '2022-12-10',
+  },
+  {
+    id: 'SLP-C9-8',
+    name: 'Sleeper 8',
+    type: 'Sleeper',
+    qrCode: 'https://railtracer.com/components/SLP-C9-8',
+    location: 'Section 5, North Line',
+    installDate: '2023-01-20',
+    currentState: 'Damaged',
+    history: [],
+    vendor: 'DuraSleepers',
+    warrantyUntil: '2043-01-20',
+    supplyDate: '2022-12-10',
   },
 ];
 
-// Populate history after components are defined
 components.forEach(comp => {
   comp.history = generateHistory(comp.id, comp.currentState);
-  // Ensure the latest history item matches the component's current state
   if (comp.history.length > 0) {
     comp.currentState = comp.history[0].status;
   }

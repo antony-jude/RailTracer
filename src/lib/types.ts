@@ -28,4 +28,7 @@ export type RailwayComponent = {
   installDate: string;
   currentState: ComponentState;
   history: Inspection[];
+  vendor: string;
+  warrantyUntil: string;
+  supplyDate: string;
 };

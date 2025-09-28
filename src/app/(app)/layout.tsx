@@ -32,6 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith('/scan')) return 'Scan Component';
     if (pathname.startsWith('/components/')) return 'Component Details';
     if (pathname.startsWith('/components')) return 'All Components';
+    if (pathname.startsWith('/portals')) return 'External Portals';
     return 'RailTracer';
   }
 
