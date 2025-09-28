@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, Train } from 'lucide-react';
+import { findNearestStation, Station } from '@/lib/stations';
 
 export function Geolocation() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [nearestStation, setNearestStation] = useState<{ station: Station, distance: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,10 +20,13 @@ export function Geolocation() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
+        const userLocation = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        });
+        };
+        setLocation(userLocation);
+        const nearest = findNearestStation(userLocation.latitude, userLocation.longitude);
+        setNearestStation(nearest);
         setLoading(false);
       },
       () => {
@@ -47,13 +52,25 @@ export function Geolocation() {
         )}
         {error && <p className="text-sm text-destructive">{error}</p>}
         {location && (
-          <div className="text-sm">
-            <p>
-              <span className="font-semibold">Latitude:</span> {location.latitude.toFixed(4)}
-            </p>
-            <p>
-              <span className="font-semibold">Longitude:</span> {location.longitude.toFixed(4)}
-            </p>
+          <div className="space-y-4">
+            <div className="text-sm">
+                <p>
+                <span className="font-semibold">Latitude:</span> {location.latitude.toFixed(4)}
+                </p>
+                <p>
+                <span className="font-semibold">Longitude:</span> {location.longitude.toFixed(4)}
+                </p>
+            </div>
+            {nearestStation && (
+                <div className="flex items-start gap-3 rounded-lg border bg-secondary/50 p-3">
+                    <Train className="h-5 w-5 mt-1 text-primary" />
+                    <div>
+                        <p className="font-semibold text-sm">Nearest Station</p>
+                        <p className="text-sm text-primary font-bold">{nearestStation.station.name}</p>
+                        <p className="text-xs text-muted-foreground">{nearestStation.distance.toFixed(2)} km away</p>
+                    </div>
+                </div>
+            )}
           </div>
         )}
       </CardContent>
