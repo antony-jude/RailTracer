@@ -7,12 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Sparkles, Upload, X, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, Sparkles, Upload, X, ShieldCheck, ShieldAlert, Link } from 'lucide-react';
 import { detectMaterialStatus, DetectMaterialStatusOutput } from '@/ai/flows/material-status-detection';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function MaterialStatusDetector() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
   const [result, setResult] = useState<DetectMaterialStatusOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,20 +31,31 @@ export function MaterialStatusDetector() {
     }
   };
   
-  const handleUsePlaceholder = (imageUrl: string) => {
+  const handleUseUrl = () => {
+    if (!imageUrl) return;
     setResult(null);
     setError(null);
-    // Fetch image and convert to dataURI
+    // Use a proxy for CORS issues if necessary, but for now, try direct fetch
     fetch(imageUrl)
-      .then(res => res.blob())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to fetch image. Status: ${res.status}`);
+        }
+        return res.blob();
+      })
       .then(blob => {
         const reader = new FileReader();
         reader.onloadend = () => {
           setSelectedImage(reader.result as string);
         };
         reader.readAsDataURL(blob);
+      })
+      .catch(err => {
+        console.error("Failed to load image from URL:", err);
+        setError("Could not load image from the provided URL. Please check the URL and try again.");
       });
   };
+
 
   const analyzeImage = async () => {
     if (!selectedImage) return;
@@ -66,6 +77,7 @@ export function MaterialStatusDetector() {
     setSelectedImage(null);
     setResult(null);
     setError(null);
+    setImageUrl('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -80,22 +92,24 @@ export function MaterialStatusDetector() {
       </CardHeader>
       <CardContent className="space-y-4">
         {!selectedImage ? (
-            <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-8 text-center">
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-8 text-center space-y-4">
                 <Upload className="w-12 h-12 text-muted-foreground" />
-                <Label htmlFor="image-upload" className="mt-4 text-primary font-semibold cursor-pointer hover:underline">
+                <Label htmlFor="image-upload" className="text-primary font-semibold cursor-pointer hover:underline">
                     Upload an image
                 </Label>
-                <p className="text-xs text-muted-foreground mt-1">or use a placeholder below</p>
                 <Input id="image-upload" type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
-                <div className="flex gap-4 mt-4">
-                    {PlaceHolderImages.map(img => (
-                        <button key={img.id} onClick={() => handleUsePlaceholder(img.imageUrl)} className="relative group">
-                            <Image data-ai-hint={img.imageHint} src={img.imageUrl} alt={img.description} width={100} height={75} className="rounded-md object-cover" />
-                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <p className="text-white text-xs text-center">{img.description}</p>
-                            </div>
-                        </button>
-                    ))}
+
+                <p className="text-xs text-muted-foreground">or paste an image URL</p>
+                <div className="flex w-full max-w-sm items-center space-x-2">
+                    <Input 
+                        type="url" 
+                        placeholder="https://..." 
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                    />
+                    <Button type="button" size="icon" onClick={handleUseUrl}>
+                        <Link className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
         ) : (
