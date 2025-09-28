@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "corroded-metal",
+      "description": "A close-up of a corroded metal surface on a railway component.",
+      "imageUrl": "https://images.unsplash.com/photo-1619944923419-e08a61595d11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjb3Jyb2RlZCUyMG1ldGFsfGVufDB8fHx8MTc1OTA4MTk5M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "corroded metal"
+    },
+    {
+      "id": "clean-metal",
+      "description": "A close-up of a clean, non-corroded metal surface on a railway component.",
+      "imageUrl": "https://images.unsplash.com/photo-1701948869405-2eb7da2a01da?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjbGVhbiUyMG1ldGFsfGVufDB8fHx8MTc1OTA4MTk5M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "clean metal"
+    }
+  ]
 }
