@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { getComponentById } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { ComponentDetails } from '@/components/component/component-details';
@@ -13,14 +13,15 @@ import { AiReportDialog } from '@/components/ai/ai-report-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 type ComponentPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default function ComponentPage({ params }: ComponentPageProps) {
   const { toast } = useToast();
-  const component = getComponentById(params.id);
+  const { id } = use(params);
+  const component = getComponentById(id);
 
   const [isReportLoading, setIsReportLoading] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
