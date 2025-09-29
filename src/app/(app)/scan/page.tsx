@@ -96,7 +96,9 @@ export default function ScanPage() {
 
   const parseVCard = (vcard: string): Partial<Omit<RailwayComponent, 'currentState' | 'history'>> & { url?: string; currentState: ComponentState } => {
     const lines = vcard.split('\n');
-    const data: any = {};
+    const data: any = {
+      vendor: 'Unknown',
+    };
     let noteContent = '';
     
     lines.forEach(line => {
@@ -124,7 +126,7 @@ export default function ScanPage() {
         notes.forEach(note => {
             const noteParts = note.split(': ');
             if (noteParts.length >= 2) {
-                const key = noteParts[0];
+                const key = noteParts[0].trim();
                 const value = noteParts.slice(1).join(': ').trim();
                 if (key === 'Location') data.location = value;
                 else if (key === 'Vendor') data.vendor = value;

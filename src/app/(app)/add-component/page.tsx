@@ -53,7 +53,7 @@ VERSION:3.0
 FN:${data.name} (${data.id})
 ORG:RailTracer Component
 CATEGORIES:${data.type}
-NOTE;CHARSET=utf-8:Location: ${data.location}\\nStatus: Good\\nInstall Date: ${new Date().toLocaleDateString()}\\nVendor: ${data.vendor}\\nSupply Date: ${new Date(data.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(data.warrantyUntil).toLocaleDateString()}
+NOTE;CHARSET=utf-8:Location: ${data.location}\\nStatus: Good
 URL:${qrCodeUrl}
 END:VCARD
         `.trim();

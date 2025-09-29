@@ -25,12 +25,6 @@ export function QrCodeDialog({ component, isOpen, onOpenChange }: QrCodeDialogPr
   if (!component) {
     return null;
   }
-
-  const sortedHistory = component.history?.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  const lastInspection = sortedHistory?.length > 0 ? sortedHistory[0] : null;
-
-  // Truncate long notes to avoid overly dense QR codes
-  const truncatedNotes = lastInspection?.notes ? (lastInspection.notes.length > 75 ? lastInspection.notes.substring(0, 72) + '...' : lastInspection.notes) : 'N/A';
   
   const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/c/${component.id}`;
 
@@ -40,7 +34,7 @@ VERSION:3.0
 FN:${component.name} (${component.id})
 ORG:RailTracer Component
 CATEGORIES:${component.type}
-NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}\\nInstall Date: ${new Date(component.installDate).toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${component.vendor}\\nSupply Date: ${new Date(component.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}\\n--LAST INSPECTION--\\nDate: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}\\nInspector: ${lastInspection ? lastInspection.inspector : 'N/A'}\\nStatus: ${lastInspection ? lastInspection.status : 'N/A'}\\nNotes: ${lastInspection ? truncatedNotes.replace(/(\\r)?\\n/g, ' ') : 'N/A'}
+NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}
 URL:${publicUrl}
 END:VCARD
   `.trim();
@@ -80,7 +74,7 @@ END:VCARD
         <DialogHeader>
           <DialogTitle>Component QR Code</DialogTitle>
           <DialogDescription>
-            Scan this code to view detailed component information. This data is embedded in the code for offline use.
+            Scan this code to view component information.
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-center p-4 bg-white rounded-lg">
