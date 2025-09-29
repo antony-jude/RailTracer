@@ -16,6 +16,13 @@ interface ComponentContextType {
 
 export const ComponentContext = createContext<ComponentContextType | undefined>(undefined);
 
+const toISOStringSafe = (timestamp: Timestamp | undefined | null): string => {
+    if (timestamp && typeof timestamp.toDate === 'function') {
+        return timestamp.toDate().toISOString();
+    }
+    return new Date().toISOString(); // Sensible fallback
+}
+
 export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [components, setComponents] = useState<RailwayComponent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,12 +36,12 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             componentsData.push({
                 ...data,
                 id: doc.id,
-                installDate: (data.installDate as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
-                supplyDate: (data.supplyDate as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
-                warrantyUntil: (data.warrantyUntil as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+                installDate: toISOStringSafe(data.installDate),
+                supplyDate: toISOStringSafe(data.supplyDate),
+                warrantyUntil: toISOStringSafe(data.warrantyUntil),
                 history: data.history?.map((h: any) => ({
                   ...h,
-                  date: (h.date as Timestamp)?.toDate().toISOString() || new Date().toISOString()
+                  date: toISOStringSafe(h.date)
                 })) || []
             } as RailwayComponent);
         });
@@ -55,12 +62,12 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             return {
                 ...data,
                 id: docSnap.id,
-                installDate: (data.installDate as Timestamp)?.toDate().toISOString(),
-                supplyDate: (data.supplyDate as Timestamp)?.toDate().toISOString(),
-                warrantyUntil: (data.warrantyUntil as Timestamp)?.toDate().toISOString(),
+                installDate: toISOStringSafe(data.installDate),
+                supplyDate: toISOStringSafe(data.supplyDate),
+                warrantyUntil: toISOStringSafe(data.warrantyUntil),
                  history: data.history?.map((h: any) => ({
                   ...h,
-                  date: (h.date as Timestamp)?.toDate().toISOString()
+                  date: toISOStringSafe(h.date)
                 })) || []
             } as RailwayComponent;
         }
@@ -78,7 +85,7 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           supplyDate: Timestamp.fromDate(new Date(componentData.supplyDate)),
           warrantyUntil: Timestamp.fromDate(new Date(componentData.warrantyUntil)),
           history: [],
-          geoPosition: component.geoPosition ? new GeoPoint(component.geoPosition.latitude, component.geoPosition.longitude) : null,
+          geoPosition: componentData.geoPosition ? new GeoPoint(componentData.geoPosition.latitude, componentData.geoPosition.longitude) : null,
         });
         return id!;
     }, []
@@ -99,7 +106,7 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 date: Timestamp.fromDate(new Date(h.date))
             }));
         }
-        if (updates.geoPosition) {
+        if (updates.geoPosition && 'latitude' in updates.geoPosition && 'longitude' in updates.geoPosition) {
             updatesWithTimestamps.geoPosition = new GeoPoint(updates.geoPosition.latitude, updates.geoPosition.longitude);
         }
 

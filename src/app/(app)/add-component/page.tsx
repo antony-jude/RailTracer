@@ -39,7 +39,7 @@ export default function AddComponentPage() {
             type: '',
             location: '',
             vendor: '',
-            warrantyUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 5)).toISOString().split('T')[0],
+            warrantyUntil: new Date().toISOString().split('T')[0],
             supplyDate: new Date().toISOString().split('T')[0],
         },
     });
@@ -83,7 +83,6 @@ END:VCARD
         if (!qrData || !componentId) return;
         const url = getQrCodeUrl(format);
         
-        // This method avoids CORS issues with the QR server API
         const link = document.createElement('a');
         link.href = url;
         link.download = `component-${componentId}-qrcode.${format}`;
