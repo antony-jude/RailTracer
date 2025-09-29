@@ -2,12 +2,16 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { RailwayComponent, ComponentState } from '@/lib/types';
 import { Calendar, MapPin, QrCode, Wrench, ShieldCheck, Building, Truck } from 'lucide-react';
+import Image from 'next/image';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from '../ui/button';
 
 type ComponentDetailsProps = {
   component: RailwayComponent;
@@ -28,6 +32,8 @@ const stateColorMap: Record<ComponentState, string> = {
 };
 
 export function ComponentDetails({ component }: ComponentDetailsProps) {
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(component.qrCode)}`;
+  
   return (
     <Card>
       <CardHeader>
@@ -85,23 +91,30 @@ export function ComponentDetails({ component }: ComponentDetailsProps) {
             <p className="font-medium">Until {new Date(component.warrantyUntil).toLocaleDateString()}</p>
           </div>
         </div>
-         <div className="flex items-center gap-3">
-          <QrCode className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">QR Code</p>
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <a href={component.qrCode} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline block max-w-full truncate">
-                            {component.qrCode}
-                        </a>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>View QR Code data</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-          </div>
+         <div className="flex items-start gap-3 md:col-span-2">
+            <QrCode className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-1" />
+            <div className="space-y-2">
+                 <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                            <QrCode className="mr-2 h-4 w-4" />
+                            Show QR Code
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-xs">
+                        <DialogHeader>
+                        <DialogTitle>Component QR Code</DialogTitle>
+                        <DialogDescription>
+                            Scan this code with any mobile device to access component details.
+                        </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex items-center justify-center p-4 bg-white rounded-lg">
+                        <Image src={qrCodeUrl} alt={`QR Code for ${component.id}`} width={250} height={250} />
+                        </div>
+                    </DialogContent>
+                </Dialog>
+                <p className="text-xs text-muted-foreground break-all">{component.qrCode}</p>
+            </div>
         </div>
       </CardContent>
     </Card>
