@@ -1,3 +1,4 @@
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { RailwayComponent, ComponentState } from '@/lib/types';
@@ -32,7 +33,21 @@ const stateColorMap: Record<ComponentState, string> = {
 };
 
 export function ComponentDetails({ component }: ComponentDetailsProps) {
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(component.qrCode)}`;
+  const lastInspection = component.history.length > 0 ? component.history[component.history.length - 1] : null;
+
+  const qrData = `
+Component: ${component.name} (${component.id})
+Type: ${component.type}
+Location: ${component.location}
+Status: ${component.currentState}
+Vendor: ${component.vendor}
+Warranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}
+Last Inspection: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}
+Last Insp. Status: ${lastInspection ? lastInspection.status : 'N/A'}
+Details URL: ${component.qrCode}
+  `.trim();
+
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`;
   
   return (
     <Card>
@@ -105,7 +120,7 @@ export function ComponentDetails({ component }: ComponentDetailsProps) {
                         <DialogHeader>
                         <DialogTitle>Component QR Code</DialogTitle>
                         <DialogDescription>
-                            Scan this code with any mobile device to access component details.
+                            Scan this code to view detailed component information.
                         </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-center p-4 bg-white rounded-lg">
