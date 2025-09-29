@@ -143,7 +143,7 @@ export default function ScanPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="w-full max-w-sm mx-auto aspect-video bg-muted rounded-lg flex items-center justify-center mb-6 overflow-hidden relative">
+                <div className="w-full max-w-sm mx-auto aspect-square bg-muted rounded-lg flex items-center justify-center mb-6 overflow-hidden relative">
                     <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                     <canvas ref={canvasRef} className="hidden" />
                      {scanActive && (
