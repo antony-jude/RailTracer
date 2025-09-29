@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { QrCode, Wand2, Download, FileType } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveAs } from 'file-saver';
-import { Separator } from '@/components/ui/separator';
 
 const componentSchema = z.object({
   id: z.string().min(3, { message: 'Component ID must be at least 3 characters.' }),

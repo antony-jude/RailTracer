@@ -30,13 +30,16 @@ export function QrCodeDialog({ component, isOpen, onOpenChange }: QrCodeDialogPr
   const sortedHistory = component.history?.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   const lastInspection = sortedHistory?.length > 0 ? sortedHistory[0] : null;
 
-  const qrData = `
+  // Truncate long notes to avoid overly dense QR codes
+  const truncatedNotes = lastInspection?.notes ? (lastInspection.notes.length > 75 ? lastInspection.notes.substring(0, 72) + '...' : lastInspection.notes) : 'N/A';
+
+  const vCardData = `
 BEGIN:VCARD
 VERSION:3.0
 FN:${component.name} (${component.id})
 ORG:RailTracer Component
 CATEGORIES:${component.type}
-NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}\\nInstall Date: ${new Date(component.installDate).toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${component.vendor}\\nSupply Date: ${new Date(component.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}\\n--LAST INSPECTION--\\nDate: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}\\nInspector: ${lastInspection ? lastInspection.inspector : 'N/A'}\\nStatus: ${lastInspection ? lastInspection.status : 'N/A'}\\nNotes: ${lastInspection ? lastInspection.notes.replace(/(\\r)?\\n/g, ' ') : 'N/A'}
+NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}\\nInstall Date: ${new Date(component.installDate).toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${component.vendor}\\nSupply Date: ${new Date(component.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}\\n--LAST INSPECTION--\\nDate: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}\\nInspector: ${lastInspection ? lastInspection.inspector : 'N/A'}\\nStatus: ${lastInspection ? lastInspection.status : 'N/A'}\\nNotes: ${lastInspection ? truncatedNotes.replace(/(\\r)?\\n/g, ' ') : 'N/A'}
 URL:${component.qrCode}
 END:VCARD
   `.trim();
@@ -44,7 +47,7 @@ END:VCARD
   const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
     const base = 'https://api.qrserver.com/v1/create-qr-code/';
     const params = new URLSearchParams({
-        data: qrData,
+        data: vCardData,
         size: '250x250',
         format: format,
         qzone: '1',
@@ -52,27 +55,21 @@ END:VCARD
     return `${base}?${params.toString()}`;
   }
 
-  const downloadQrCode = async (format: 'png' | 'svg') => {
-      if (!qrData || !component.id) return;
+  const downloadQrCode = (format: 'png' | 'svg') => {
+      if (!vCardData || !component.id) return;
       const url = getQrCodeUrl(format);
-      try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error('Network response was not ok.');
-          const blob = await response.blob();
-          saveAs(blob, `component-${component.id}-qrcode.${format}`);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `component-${component.id}-qrcode.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
-          toast({
-              title: 'Download Started',
-              description: `QR Code (${format.toUpperCase()}) is downloading.`
-          })
-      } catch (error) {
-          console.error('Failed to download QR code:', error);
-          toast({
-              variant: 'destructive',
-              title: 'Download Failed',
-              description: 'Could not download the QR code. Please try again.'
-          })
-      }
+      toast({
+          title: 'Download Started',
+          description: `QR Code (${format.toUpperCase()}) is downloading.`
+      })
   }
 
 
@@ -102,5 +99,3 @@ END:VCARD
     </Dialog>
   );
 }
-
-    

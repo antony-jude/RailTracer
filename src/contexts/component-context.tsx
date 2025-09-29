@@ -10,7 +10,7 @@ interface ComponentContextType {
   components: RailwayComponent[];
   loading: boolean;
   getComponentById: (id: string) => Promise<RailwayComponent | undefined>;
-  addComponent: (component: Omit<RailwayComponent, 'id'> & {id: string}) => Promise<string>;
+  addComponent: (component: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string}) => Promise<string>;
   updateComponent: (id:string, updates: Partial<RailwayComponent>) => Promise<void>;
 }
 
@@ -77,6 +77,8 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           installDate: Timestamp.fromDate(new Date(componentData.installDate)),
           supplyDate: Timestamp.fromDate(new Date(componentData.supplyDate)),
           warrantyUntil: Timestamp.fromDate(new Date(componentData.warrantyUntil)),
+          history: [],
+          geoPosition: component.geoPosition ? new GeoPoint(component.geoPosition.latitude, component.geoPosition.longitude) : null,
         });
         return id!;
     }, []
@@ -86,16 +88,19 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     async (id: string, updates: Partial<RailwayComponent>) => {
         const docRef = doc(db, 'components', id);
         
-        const updatesWithTimestamps = {...updates};
+        const updatesWithTimestamps: Record<string, any> = {...updates};
 
-        if (updates.installDate) updatesWithTimestamps.installDate = Timestamp.fromDate(new Date(updates.installDate)) as any;
-        if (updates.supplyDate) updatesWithTimestamps.supplyDate = Timestamp.fromDate(new Date(updates.supplyDate)) as any;
-        if (updates.warrantyUntil) updatesWithTimestamps.warrantyUntil = Timestamp.fromDate(new Date(updates.warrantyUntil)) as any;
+        if (updates.installDate) updatesWithTimestamps.installDate = Timestamp.fromDate(new Date(updates.installDate));
+        if (updates.supplyDate) updatesWithTimestamps.supplyDate = Timestamp.fromDate(new Date(updates.supplyDate));
+        if (updates.warrantyUntil) updatesWithTimestamps.warrantyUntil = Timestamp.fromDate(new Date(updates.warrantyUntil));
         if (updates.history) {
             updatesWithTimestamps.history = updates.history.map(h => ({
                 ...h,
                 date: Timestamp.fromDate(new Date(h.date))
-            })) as any;
+            }));
+        }
+        if (updates.geoPosition) {
+            updatesWithTimestamps.geoPosition = new GeoPoint(updates.geoPosition.latitude, updates.geoPosition.longitude);
         }
 
         await updateDoc(docRef, updatesWithTimestamps);

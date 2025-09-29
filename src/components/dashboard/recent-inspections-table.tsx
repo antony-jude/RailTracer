@@ -66,7 +66,7 @@ export function RecentInspectionsTable({ components }: { components: RailwayComp
                     <Link href={`/components/${inspection.componentId}`} className="font-medium hover:underline">
                         {inspection.componentName}
                     </Link>
-                    <div className="text-xs text-muted-foreground md:hidden">{inspection.date}</div>
+                    <div className="text-xs text-muted-foreground md:hidden">{new Date(inspection.date).toLocaleDateString()}</div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{inspection.inspector}</TableCell>
                     <TableCell className="hidden md:table-cell">{new Date(inspection.date).toLocaleDateString()}</TableCell>
