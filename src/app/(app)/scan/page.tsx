@@ -144,14 +144,13 @@ export default function ScanPage() {
                 
                 try {
                     let componentId: string | undefined;
-                    let existingComponent: RailwayComponent | undefined;
 
                     if (code.data.startsWith('BEGIN:VCARD')) {
                         const vcardData = parseVCard(code.data);
                         componentId = vcardData.id;
 
                         if (componentId) {
-                            existingComponent = await getComponentById(componentId);
+                            const existingComponent = await getComponentById(componentId);
                             if (!existingComponent) {
                                 const newComponent: Omit<RailwayComponent, 'id'> = {
                                     id: vcardData.id!,
@@ -175,10 +174,14 @@ export default function ScanPage() {
                             }
                         }
 
-                    } else { // Assume it's a URL
-                        const url = new URL(code.data);
-                        const pathParts = url.pathname.split('/');
-                        componentId = pathParts[pathParts.length - 1];
+                    } else { 
+                        try {
+                            const url = new URL(code.data);
+                            const pathParts = url.pathname.split('/');
+                            componentId = pathParts[pathParts.length - 1];
+                        } catch (e) {
+                            // Not a valid URL, do nothing and let it fall through to the error
+                        }
                     }
 
                     if (componentId) {
@@ -263,3 +266,5 @@ export default function ScanPage() {
     </div>
   );
 }
+
+    
