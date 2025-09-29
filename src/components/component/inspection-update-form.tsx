@@ -159,7 +159,7 @@ export function InspectionUpdateForm({ component }: InspectionUpdateFormProps) {
                             <AccordionItem value="ai-tools">
                                 <AccordionTrigger className="text-sm">
                                     <div className="flex items-center gap-2">
-                                        <Sparkles className="w-4 h-4 text-accent" />
+                                        <Sparkles className="w-4 h-4 text-primary" />
                                         <span>AI Assistant Tools</span>
                                     </div>
                                 </AccordionTrigger>

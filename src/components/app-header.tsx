@@ -24,7 +24,7 @@ export function AppHeader({ pageTitle }: AppHeaderProps) {
                 </SheetContent>
             </Sheet>
             <div className="flex-1">
-                <h1 className="font-headline text-lg font-semibold md:text-xl">{pageTitle}</h1>
+                <h1 className="font-headline text-lg md:text-xl">{pageTitle}</h1>
             </div>
             <div className="flex items-center gap-4">
                 <SyncIndicator />

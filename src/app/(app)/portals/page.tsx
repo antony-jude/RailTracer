@@ -20,7 +20,7 @@ export default function ExternalPortalsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>External System Portals</CardTitle>
+        <CardTitle className="font-headline">External System Portals</CardTitle>
         <CardDescription>
             Links to external government systems for additional asset management and procurement information.
         </CardDescription>

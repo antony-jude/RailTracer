@@ -63,7 +63,7 @@ export function Geolocation() {
     <Card>
       <CardHeader>
         <CardTitle className="font-headline flex items-center gap-2">
-            <MapPin className="text-accent" /> Current Location
+            <MapPin className="text-primary" /> Current Location
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -85,7 +85,7 @@ export function Geolocation() {
                 </p>
             </div>
             {nearestStation && (
-                <div className="flex items-start gap-3 rounded-lg border bg-secondary/50 p-3">
+                <div className="flex items-start gap-3 rounded-lg border bg-muted/50 p-3">
                     <Train className="h-5 w-5 mt-1 text-primary" />
                     <div>
                         <p className="font-semibold text-sm">Nearest Station</p>

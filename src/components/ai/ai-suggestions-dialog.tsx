@@ -21,8 +21,8 @@ export function AiSuggestionsDialog({ isOpen, onOpenChange, suggestions }: AiSug
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 font-headline">
-            <Lightbulb className="text-accent" />
+          <AlertDialogTitle className="font-headline flex items-center gap-2">
+            <Lightbulb className="text-primary" />
             AI-Generated Suggestions
           </AlertDialogTitle>
           <AlertDialogDescription>

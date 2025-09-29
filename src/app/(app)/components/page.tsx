@@ -70,7 +70,7 @@ export default function ComponentsListPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
             <div>
-                <CardTitle>All Components</CardTitle>
+                <CardTitle className="font-headline">All Components</CardTitle>
                 <CardDescription>A complete list of all tracked railway assets.</CardDescription>
             </div>
              <Button asChild>

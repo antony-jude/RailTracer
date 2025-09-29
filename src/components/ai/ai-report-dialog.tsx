@@ -23,8 +23,8 @@ export function AiReportDialog({ isOpen, onOpenChange, report, isLoading }: AiRe
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-2xl">
         <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2 font-headline">
-            <FileText className="text-accent" />
+          <AlertDialogTitle className="font-headline flex items-center gap-2">
+            <FileText className="text-primary" />
             AI-Generated Component Report
           </AlertDialogTitle>
           <AlertDialogDescription>

@@ -42,12 +42,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ComponentProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <div className="hidden border-r bg-muted/40 md:block">
+        <div className="hidden border-r bg-card md:block">
           <AppSidebar />
         </div>
         <div className="flex flex-col">
           <AppHeader pageTitle={getPageTitle()} />
-          <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
+          <main className="flex-1 overflow-auto p-4 md:p-6">
             {children}
           </main>
           <AiChatbot />

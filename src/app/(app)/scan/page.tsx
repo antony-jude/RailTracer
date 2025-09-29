@@ -60,11 +60,6 @@ export default function ScanPage() {
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please enable camera permissions in your browser settings to use this app.',
-        });
       }
     };
 
@@ -118,9 +113,8 @@ export default function ScanPage() {
         } else if (sanitizedLine.startsWith('URL:')) {
             data.url = sanitizedLine.substring(4).trim();
         } else if (sanitizedLine.startsWith('NOTE:')) {
-            const notesText = sanitizedLine.substring(5);
-            // Split by unescaped newlines, but handle escaped ones within a note
-            const notes = notesText.split(/(?<!\\)\\n/g);
+            const notesText = sanitizedLine.substring(5).replace(/\\n/g, '\n');
+            const notes = notesText.split('\n');
             notes.forEach(note => {
                 const noteParts = note.split(': ');
                 if (noteParts.length >= 2) {
@@ -148,14 +142,12 @@ export default function ScanPage() {
     let component: RailwayComponent | undefined | null = null;
     let isNewComponent = false;
 
-    // 1. Try to parse as vCard for new components
     if (scannedData.startsWith('BEGIN:VCARD')) {
         const vcardData = parseVCard(scannedData);
         if (vcardData.id) {
             componentId = vcardData.id;
             component = await getComponentById(vcardData.id);
             if (!component) {
-                // This is a new component being registered
                 isNewComponent = true;
                 const newComponentData: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string, qrCode: string, geoPosition?: GeoPoint} = {
                     id: vcardData.id!,
@@ -183,19 +175,19 @@ export default function ScanPage() {
             }
         }
     } else {
-        // 2. Try to parse as a URL for existing components
         try {
             const url = new URL(scannedData);
             const pathParts = url.pathname.split('/');
-            if (pathParts.length >= 2 && (pathParts[pathParts.length-2] === 'components' || pathParts[pathParts.length-2] === 'c')) {
-                componentId = pathParts[pathParts.length - 1];
+            const id = pathParts.pop();
+            const prefix = pathParts.pop();
+            if ((prefix === 'components' || prefix === 'c') && id) {
+                componentId = id;
             }
         } catch (e) {
-             // Not a valid URL, do nothing
+             // Not a valid URL
         }
     }
 
-    // 3. Get component data and either show update dialog or navigate
     if (componentId) {
         if (!component) {
             component = await getComponentById(componentId);
@@ -268,7 +260,6 @@ export default function ScanPage() {
     }
     setIsStatusUpdateOpen(false);
     setScannedComponent(null);
-    // Resume scanning if user cancels
     setTimeout(() => setScanActive(true), 500);
   }
 
@@ -328,7 +319,7 @@ export default function ScanPage() {
                         <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                         <canvas ref={canvasRef} className="hidden" />
                         {scanActive && (
-                            <div className="absolute inset-0 border-4 border-accent rounded-lg animate-pulse"></div>
+                            <div className="absolute inset-0 border-4 border-primary rounded-lg animate-pulse"></div>
                         )}
                     </div>
                     {hasCameraPermission === false && (

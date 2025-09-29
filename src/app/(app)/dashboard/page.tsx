@@ -28,18 +28,21 @@ export default function DashboardPage() {
           value={goodCount}
           icon={CheckCircle}
           description="Components in good condition"
+          color="hsl(var(--chart-2))"
         />
         <MetricCard
           title="Poor"
           value={poorCount}
           icon={AlertTriangle}
           description="Components requiring inspection"
+          color="hsl(var(--chart-3))"
         />
         <MetricCard
           title="Needs Replacement"
           value={needsReplacementCount}
           icon={XCircle}
           description="Components needing repair"
+          color="hsl(var(--destructive))"
         />
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">

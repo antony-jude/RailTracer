@@ -34,7 +34,7 @@ export function RecentInspectionsTable({ components }: { components: RailwayComp
     <Card>
       <CardHeader className="flex flex-row items-center">
         <div className="grid gap-2">
-            <CardTitle>Recent Inspections</CardTitle>
+            <CardTitle className="font-headline">Recent Inspections</CardTitle>
             <CardDescription>A log of the latest inspection activities.</CardDescription>
         </div>
         <Button asChild size="sm" className="ml-auto gap-1">

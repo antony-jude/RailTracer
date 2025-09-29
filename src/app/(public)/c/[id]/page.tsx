@@ -44,9 +44,9 @@ const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destruc
 };
 
 const stateInfoMap: Record<ComponentState, { color: string, icon: React.FC<any> }> = {
-    'Good': { color: 'bg-green-500', icon: CheckCircle },
-    'Poor': { color: 'bg-yellow-500', icon: AlertTriangle },
-    'Needs Replacement': { color: 'bg-red-500', icon: XCircle },
+    'Good': { color: 'text-green-500', icon: CheckCircle },
+    'Poor': { color: 'text-yellow-500', icon: AlertTriangle },
+    'Needs Replacement': { color: 'text-red-500', icon: XCircle },
 };
 
 
@@ -58,10 +58,10 @@ export default async function PublicComponentPage({ params }: { params: { id: st
   }
 
   const StatusIcon = stateInfoMap[component.currentState].icon;
-  const statusColor = stateInfoMap[component.currentState].color;
+  const statusColorClass = stateInfoMap[component.currentState].color;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
        <div className="w-full max-w-2xl mx-auto">
          <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12">
@@ -79,35 +79,39 @@ export default async function PublicComponentPage({ params }: { params: { id: st
                     <CardTitle className="font-headline text-2xl">{component.name}</CardTitle>
                 </div>
                 <Badge variant={stateVariantMap[component.currentState]} className="text-sm">
-                    <StatusIcon className={`w-4 h-4 mr-2`} />
+                    <StatusIcon className={`w-4 h-4 mr-2 ${statusColorClass}`} />
                     {component.currentState}
                 </Badge>
             </div>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 text-sm">
-                <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <Wrench className="w-5 h-5 text-primary" />
                     <div>
                         <p className="font-semibold">Type</p>
                         <p>{component.type}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <MapPin className="w-5 h-5 text-primary" />
                     <div>
                         <p className="font-semibold">Location</p>
                         <p>{component.location}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <Calendar className="w-5 h-5 text-primary" />
                     <div>
                         <p className="font-semibold">Install Date</p>
                         <p>{new Date(component.installDate).toLocaleDateString()}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg" style={{backgroundColor: `hsl(var(--${stateVariantMap[component.currentState] === 'default' ? 'primary' : stateVariantMap[component.currentState]}) / 0.1)`}}>
-                    <StatusIcon className={`w-5 h-5 text-${stateVariantMap[component.currentState] === 'default' ? 'primary' : stateVariantMap[component.currentState]}`} />
+                <div className={`flex items-center gap-3 p-3 rounded-lg bg-opacity-20 ${
+                    component.currentState === 'Good' ? 'bg-green-500/10' :
+                    component.currentState === 'Poor' ? 'bg-yellow-500/10' :
+                    'bg-red-500/10'
+                }`}>
+                    <StatusIcon className={`w-5 h-5 ${statusColorClass}`} />
                     <div>
                         <p className="font-semibold">Current Status</p>
                         <p>{component.currentState}</p>

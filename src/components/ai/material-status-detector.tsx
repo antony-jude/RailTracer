@@ -91,7 +91,7 @@ export function MaterialStatusDetector() {
     <Card>
       <CardHeader>
         <CardTitle className="font-headline flex items-center gap-2">
-            <Sparkles className="text-accent" /> AI Material Status Detection
+            <Sparkles className="text-primary" /> AI Material Status Detection
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
