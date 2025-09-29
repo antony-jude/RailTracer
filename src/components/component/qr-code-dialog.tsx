@@ -20,7 +20,8 @@ export function QrCodeDialog({ component, isOpen, onOpenChange }: QrCodeDialogPr
     return null;
   }
 
-  const lastInspection = component.history.length > 0 ? component.history[0] : null;
+  const sortedHistory = component.history?.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const lastInspection = sortedHistory?.length > 0 ? sortedHistory[0] : null;
 
   const qrData = `
 BEGIN:VCARD
