@@ -7,7 +7,7 @@ import { QrCode } from 'lucide-react';
 import { MaterialStatusDetector } from '@/components/ai/material-status-detector';
 import { Geolocation } from '@/components/geolocation';
 import { Separator } from '@/components/ui/separator';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import jsQR from 'jsqr';
@@ -93,116 +93,118 @@ export default function ScanPage() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    let animationFrameId: number;
-
-    const parseVCard = (vcard: string): Partial<RailwayComponent> & { url?: string } => {
-        const lines = vcard.split('\n');
-        const data: any = {};
-        lines.forEach(line => {
-            if (line.startsWith('FN:')) {
-                const fn = line.substring(3);
-                const match = fn.match(/(.*) \((.*)\)/);
-                if (match) {
-                    data.name = match[1].trim();
-                    data.id = match[2].trim();
-                } else {
-                    data.name = fn.trim();
-                }
-            }
-            if (line.startsWith('CATEGORIES:')) data.type = line.substring(11).trim();
-            if (line.startsWith('URL:')) data.url = line.substring(4).trim();
-            if (line.startsWith('NOTE:')) {
-                const notes = line.substring(5).split('\\n');
-                notes.forEach(note => {
-                    const [key, value] = note.split(': ');
-                    if (key && value) {
-                        const val = value.trim();
-                        if (key === 'Location') data.location = val;
-                        if (key === 'Vendor') data.vendor = val;
-                        if (key === 'Install Date') data.installDate = new Date().toISOString(); // Set current date as install date on first scan
-                        if (key === 'Warranty Until') data.warrantyUntil = new Date(val).toISOString();
-                        if (key === 'Supply Date') data.supplyDate = new Date(val).toISOString();
-                    }
-                });
-            }
-        });
-        return data;
-    }
-
-    const handleScan = async (scannedData: string) => {
-        setScanActive(false);
-        toast({ title: "QR Code Found", description: "Processing..." });
-
-        let componentId: string | undefined;
-        let isNewComponent = false;
-
-        // 1. Try to parse as vCard for new components
-        if (scannedData.startsWith('BEGIN:VCARD')) {
-            const vcardData = parseVCard(scannedData);
-            if (vcardData.id) {
-                const existingComponent = await getComponentById(vcardData.id);
-                if (!existingComponent) {
-                    const newComponent: Omit<RailwayComponent, 'id'> = {
-                        id: vcardData.id!,
-                        name: vcardData.name || 'Unknown',
-                        type: vcardData.type || 'Unknown',
-                        location: vcardData.location || 'Unknown',
-                        vendor: vcardData.vendor || 'Unknown',
-                        supplyDate: vcardData.supplyDate || new Date().toISOString(),
-                        warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
-                        installDate: new Date().toISOString(), // Set install date on first scan
-                        currentState: 'Verified',
-                        qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
-                        history: [],
-                        geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
-                    };
-                    await addComponent(newComponent);
-                    isNewComponent = true;
-                    toast({
-                        title: "New Component Registered",
-                        description: `Component ${vcardData.id} has been added.`
-                    });
-                }
-                componentId = vcardData.id;
-            }
-        } else {
-            // 2. Try to parse as a URL for existing components
-            try {
-                const url = new URL(scannedData);
-                const pathParts = url.pathname.split('/');
-                if (pathParts.length >= 3 && pathParts[pathParts.length - 2] === 'components') {
-                    componentId = pathParts[pathParts.length - 1];
-                }
-            } catch (e) {
-                // Not a valid URL, will be handled by the final check
+  const parseVCard = (vcard: string): Partial<RailwayComponent> & { url?: string } => {
+    const lines = vcard.split('\n');
+    const data: any = {};
+    lines.forEach(line => {
+        if (line.startsWith('FN:')) {
+            const fn = line.substring(3);
+            const match = fn.match(/(.*) \((.*)\)/);
+            if (match) {
+                data.name = match[1].trim();
+                data.id = match[2].trim();
+            } else {
+                data.name = fn.trim();
             }
         }
+        if (line.startsWith('CATEGORIES:')) data.type = line.substring(11).trim();
+        if (line.startsWith('URL:')) data.url = line.substring(4).trim();
+        if (line.startsWith('NOTE:')) {
+            const notes = line.substring(5).split('\\n');
+            notes.forEach(note => {
+                const [key, value] = note.split(': ');
+                if (key && value) {
+                    const val = value.trim();
+                    if (key === 'Location') data.location = val;
+                    if (key === 'Vendor') data.vendor = val;
+                    if (key === 'Install Date') data.installDate = new Date().toISOString();
+                    if (key === 'Warranty Until') data.warrantyUntil = new Date(val).toISOString();
+                    if (key === 'Supply Date') data.supplyDate = new Date(val).toISOString();
+                }
+            });
+        }
+    });
+    return data;
+  }
 
-        // 3. Navigate or show error
-        if (componentId) {
-            if (!isNewComponent && currentPosition) {
+  const handleScan = useCallback(async (scannedData: string) => {
+    setScanActive(false);
+    toast({ title: "QR Code Found", description: "Processing..." });
+
+    let componentId: string | undefined;
+    let isNewComponent = false;
+
+    // 1. Try to parse as vCard for new components
+    if (scannedData.startsWith('BEGIN:VCARD')) {
+        const vcardData = parseVCard(scannedData);
+        if (vcardData.id) {
+            const existingComponent = await getComponentById(vcardData.id);
+            if (!existingComponent) {
+                const newComponent: Omit<RailwayComponent, 'id'> = {
+                    id: vcardData.id!,
+                    name: vcardData.name || 'Unknown',
+                    type: vcardData.type || 'Unknown',
+                    location: vcardData.location || 'Unknown',
+                    vendor: vcardData.vendor || 'Unknown',
+                    supplyDate: vcardData.supplyDate || new Date().toISOString(),
+                    warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
+                    installDate: new Date().toISOString(),
+                    currentState: 'Verified',
+                    qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
+                    history: [],
+                    geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
+                };
+                await addComponent(newComponent);
+                isNewComponent = true;
+                toast({
+                    title: "New Component Registered",
+                    description: `Component ${vcardData.id} has been added.`
+                });
+            }
+            componentId = vcardData.id;
+        }
+    } else {
+        // 2. Try to parse as a URL for existing components
+        try {
+            const url = new URL(scannedData);
+            const pathParts = url.pathname.split('/');
+            if (pathParts.length >= 3 && pathParts[pathParts.length - 2] === 'components') {
+                componentId = pathParts[pathParts.length - 1];
+            }
+        } catch (e) {
+            // Not a valid URL, will be handled by the final check
+        }
+    }
+
+    // 3. Navigate or show error
+    if (componentId) {
+        if (!isNewComponent && currentPosition) {
+            const componentToUpdate = await getComponentById(componentId);
+            if (componentToUpdate) {
                 await updateComponent(componentId, { 
                     geoPosition: new GeoPoint(currentPosition.latitude, currentPosition.longitude),
                     location: `Scanned at ${currentPosition.latitude.toFixed(4)}, ${currentPosition.longitude.toFixed(4)}`
                 });
             }
-            toast({
-                title: "Scan Successful",
-                description: `Navigating to component ${componentId}...`
-            });
-            router.push(`/components/${componentId}`);
-        } else {
-            toast({
-                variant: 'destructive',
-                title: "Invalid QR Code",
-                description: "This QR code is not recognized. Please try again.",
-            });
-            // Briefly show the error, then restart scanning
-            setTimeout(() => setScanActive(true), 3000);
         }
-    };
+        toast({
+            title: "Scan Successful",
+            description: `Navigating to component ${componentId}...`
+        });
+        router.push(`/components/${componentId}`);
+    } else {
+        toast({
+            variant: 'destructive',
+            title: "Invalid QR Code",
+            description: "This QR code is not recognized. Please try again.",
+        });
+        setTimeout(() => setScanActive(true), 3000);
+    }
+  }, [getComponentById, addComponent, updateComponent, currentPosition, toast, router]);
 
+
+  useEffect(() => {
+    let animationFrameId: number;
 
     const tick = () => {
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current && scanActive) {
@@ -236,7 +238,7 @@ export default function ScanPage() {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [scanActive, router, toast, addComponent, getComponentById, updateComponent, currentPosition]);
+  }, [scanActive, handleScan]);
 
   return (
     <div className="space-y-6">
