@@ -34,7 +34,13 @@ export default function ScanPage() {
       }
 
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: "environment",
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        });
         setHasCameraPermission(true);
         setScanActive(true);
 
@@ -89,7 +95,7 @@ export default function ScanPage() {
                     const pathParts = url.pathname.split('/');
                     const componentId = pathParts[pathParts.length - 1];
 
-                    if (componentId && url.hostname.includes('railtracer.com')) {
+                    if (componentId && (url.hostname.includes('railtracer.com') || url.pathname.includes('/components/'))) {
                         toast({
                             title: "QR Code Scanned",
                             description: `Redirecting to component ${componentId}...`
@@ -110,7 +116,9 @@ export default function ScanPage() {
             }
         }
       }
-      animationFrameId = requestAnimationFrame(tick);
+      if (scanActive) {
+        animationFrameId = requestAnimationFrame(tick);
+      }
     };
 
     if (scanActive) {
