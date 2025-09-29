@@ -42,7 +42,17 @@ END:VCARD
   `.trim();
 
   const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}&format=${format}`;
+    const base = 'https://api.qr-code-generator.com/v1/create';
+    const params = new URLSearchParams({
+        'qr-code-text': qrData,
+        'image-format': format.toUpperCase(),
+        'font-name': 'Roboto',
+        'marker-center-template': 'circle',
+        'marker-left-template': 'circle',
+        'marker-right-template': 'circle',
+        'qr-code-logo': 'scan-me-square'
+    });
+    return `${base}?${params.toString()}`;
   }
 
   const downloadQrCode = async (format: 'png' | 'svg') => {

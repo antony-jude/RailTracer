@@ -69,13 +69,25 @@ END:VCARD
     
     const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
         if (!qrData) return '';
-        return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}&format=${format}`;
+        // Use a different QR generator service that supports dotted style
+        const base = 'https://api.qr-code-generator.com/v1/create';
+        const params = new URLSearchParams({
+            'qr-code-text': qrData,
+            'image-format': format.toUpperCase(),
+            'font-name': 'Roboto', // required param for this service
+            'marker-center-template': 'circle',
+            'marker-left-template': 'circle',
+            'marker-right-template': 'circle',
+            'qr-code-logo': 'scan-me-square'
+        });
+        return `${base}?${params.toString()}`;
     }
 
     const downloadQrCode = async (format: 'png' | 'svg') => {
         if (!qrData || !componentId) return;
         const url = getQrCodeUrl(format);
         try {
+            // This API requires a different approach for downloading, fetch->blob is simpler.
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network response was not ok.');
             const blob = await response.blob();
