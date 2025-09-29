@@ -120,7 +120,7 @@ export default function ScanPage() {
                         const val = value.trim();
                         if (key === 'Location') data.location = val;
                         if (key === 'Vendor') data.vendor = val;
-                        if (key === 'Install Date') data.installDate = new Date(val).toISOString();
+                        if (key === 'Install Date') data.installDate = new Date().toISOString(); // Set current date as install date on first scan
                         if (key === 'Warranty Until') data.warrantyUntil = new Date(val).toISOString();
                         if (key === 'Supply Date') data.supplyDate = new Date(val).toISOString();
                     }
@@ -167,8 +167,8 @@ export default function ScanPage() {
                                     vendor: vcardData.vendor || 'Unknown',
                                     supplyDate: vcardData.supplyDate || new Date().toISOString(),
                                     warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
-                                    installDate: vcardData.installDate || new Date().toISOString(),
-                                    currentState: 'Unverified',
+                                    installDate: new Date().toISOString(), // Set install date on first scan
+                                    currentState: 'Verified',
                                     qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
                                     history: [],
                                     geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
@@ -180,14 +180,16 @@ export default function ScanPage() {
                                 });
                             }
                         }
-
                     } else { 
                         try {
                             const url = new URL(code.data);
                             const pathParts = url.pathname.split('/');
-                            componentId = pathParts[pathParts.length - 1];
+                            const potentialId = pathParts[pathParts.length - 1];
+                            if (pathParts.includes('components') && potentialId) {
+                                componentId = potentialId;
+                            }
                         } catch (e) {
-                            // Not a valid URL, do nothing and let it fall through to the error
+                           // Not a valid URL, will be handled by the final check
                         }
                     }
 
@@ -274,5 +276,3 @@ export default function ScanPage() {
     </div>
   );
 }
-
-    
