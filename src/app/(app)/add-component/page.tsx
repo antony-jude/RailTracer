@@ -45,7 +45,7 @@ export default function AddComponentPage() {
     });
 
     const onSubmit = (data: ComponentFormValues) => {
-        const qrCodeUrl = `${window.location.origin}/components/${data.id}`;
+        const qrCodeUrl = `${window.location.origin}/c/${data.id}`;
         
         const vCardData = `
 BEGIN:VCARD

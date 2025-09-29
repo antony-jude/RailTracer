@@ -122,17 +122,15 @@ export default function ScanPage() {
             // Split by unescaped newlines, but handle escaped ones within a note
             const notes = notesText.split(/(?<!\\)\\n/g);
             notes.forEach(note => {
-                const parts = note.split(': ');
-                if (parts.length >= 2) {
-                    const key = parts[0];
-                    const value = parts.slice(1).join(': ').trim();
+                const noteParts = note.split(': ');
+                if (noteParts.length >= 2) {
+                    const key = noteParts[0];
+                    const value = noteParts.slice(1).join(': ').trim();
                     if (key === 'Location') data.location = value;
                     else if (key === 'Vendor') data.vendor = value;
                     else if (key === 'Install Date') data.installDate = new Date(value).toISOString();
                     else if (key === 'Warranty Until') data.warrantyUntil = new Date(value).toISOString();
                     else if (key === 'Supply Date') data.supplyDate = new Date(value).toISOString();
-                } else if (note.includes('--MANUFACTURER--') || note.includes('--LAST INSPECTION--')) {
-                    // This is a header, do nothing.
                 }
             });
         }
@@ -157,7 +155,9 @@ export default function ScanPage() {
             componentId = vcardData.id;
             component = await getComponentById(vcardData.id);
             if (!component) {
-                const newComponentData: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string, geoPosition?: GeoPoint} = {
+                // This is a new component being registered
+                isNewComponent = true;
+                const newComponentData: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string, qrCode: string, geoPosition?: GeoPoint} = {
                     id: vcardData.id!,
                     name: vcardData.name || 'Unknown',
                     type: vcardData.type || 'Unknown',
@@ -167,7 +167,7 @@ export default function ScanPage() {
                     warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
                     installDate: new Date().toISOString(),
                     currentState: 'Good',
-                    qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
+                    qrCode: vcardData.url || `${window.location.origin}/c/${vcardData.id}`,
                     history: [],
                 };
                 if (currentPosition) {
@@ -176,7 +176,6 @@ export default function ScanPage() {
                 
                 await addComponent(newComponentData);
                 component = await getComponentById(vcardData.id);
-                isNewComponent = true;
                 toast({
                     title: "New Component Registered",
                     description: `Component ${vcardData.id} has been added.`
@@ -188,7 +187,7 @@ export default function ScanPage() {
         try {
             const url = new URL(scannedData);
             const pathParts = url.pathname.split('/');
-            if (pathParts.length >= 3 && pathParts[pathParts.length - 2] === 'components') {
+            if (pathParts.length >= 2 && (pathParts[pathParts.length-2] === 'components' || pathParts[pathParts.length-2] === 'c')) {
                 componentId = pathParts[pathParts.length - 1];
             }
         } catch (e) {

@@ -12,7 +12,6 @@ import type { RailwayComponent } from '@/lib/types';
 import { Button } from "../ui/button";
 import { Download, FileType } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { saveAs } from 'file-saver';
 
 type QrCodeDialogProps = {
   component: RailwayComponent | null;
@@ -32,6 +31,8 @@ export function QrCodeDialog({ component, isOpen, onOpenChange }: QrCodeDialogPr
 
   // Truncate long notes to avoid overly dense QR codes
   const truncatedNotes = lastInspection?.notes ? (lastInspection.notes.length > 75 ? lastInspection.notes.substring(0, 72) + '...' : lastInspection.notes) : 'N/A';
+  
+  const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/c/${component.id}`;
 
   const vCardData = `
 BEGIN:VCARD
@@ -40,7 +41,7 @@ FN:${component.name} (${component.id})
 ORG:RailTracer Component
 CATEGORIES:${component.type}
 NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}\\nInstall Date: ${new Date(component.installDate).toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${component.vendor}\\nSupply Date: ${new Date(component.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}\\n--LAST INSPECTION--\\nDate: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}\\nInspector: ${lastInspection ? lastInspection.inspector : 'N/A'}\\nStatus: ${lastInspection ? lastInspection.status : 'N/A'}\\nNotes: ${lastInspection ? truncatedNotes.replace(/(\\r)?\\n/g, ' ') : 'N/A'}
-URL:${component.qrCode}
+URL:${publicUrl}
 END:VCARD
   `.trim();
 
