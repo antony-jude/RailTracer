@@ -67,39 +67,29 @@ END:VCARD
         });
     };
     
-    const getQrCodeUrl = (format: 'png' | 'svg' = 'png', forDisplay = true) => {
+    const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
         if (!qrData) return '';
-        // Use a different QR generator service that supports dotted style
-        const base = 'https://api.qr-code-generator.com/v1/create';
+        const base = 'https://api.qrserver.com/v1/create-qr-code/';
         const params = new URLSearchParams({
-            'qr-code-text': qrData,
-            'image-format': format.toUpperCase(),
-            'font-name': 'Roboto', // required param for this service
-            'qr-code-styling': 'dots',
-            'marker-center-template': 'circle',
-            'marker-left-template': 'circle',
-            'marker-right-template': 'circle',
-            'qr-code-logo': 'scan-me-square'
+            data: qrData,
+            size: '250x250',
+            format: format,
+            qzone: '1',
         });
-        if (!forDisplay) {
-            params.set('download', '1');
-        }
+        
         return `${base}?${params.toString()}`;
     }
 
-    const downloadQrCode = (format: 'png' | 'svg') => {
+    const downloadQrCode = async (format: 'png' | 'svg') => {
         if (!qrData || !componentId) return;
-        const url = getQrCodeUrl(format, false);
+        const url = getQrCodeUrl(format);
         
         try {
-            // Instead of fetching, create an anchor tag and click it to trigger download
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `component-${componentId}-qrcode.${format}`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok.');
+            const blob = await response.blob();
+            saveAs(blob, `component-${componentId}-qrcode.${format}`);
+
             toast({
                 title: 'Download Started',
                 description: `QR Code (${format.toUpperCase()}) is downloading.`
@@ -242,7 +232,5 @@ END:VCARD
     </>
   );
 }
-
-    
 
     

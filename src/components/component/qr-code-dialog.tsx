@@ -12,6 +12,7 @@ import type { RailwayComponent } from '@/lib/types';
 import { Button } from "../ui/button";
 import { Download, FileType } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { saveAs } from 'file-saver';
 
 type QrCodeDialogProps = {
   component: RailwayComponent | null;
@@ -40,34 +41,25 @@ URL:${component.qrCode}
 END:VCARD
   `.trim();
 
-  const getQrCodeUrl = (format: 'png' | 'svg' = 'png', forDisplay = true) => {
-    const base = 'https://api.qr-code-generator.com/v1/create';
+  const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
+    const base = 'https://api.qrserver.com/v1/create-qr-code/';
     const params = new URLSearchParams({
-        'qr-code-text': qrData,
-        'image-format': format.toUpperCase(),
-        'font-name': 'Roboto',
-        'qr-code-styling': 'dots',
-        'marker-center-template': 'circle',
-        'marker-left-template': 'circle',
-        'marker-right-template': 'circle',
-        'qr-code-logo': 'scan-me-square'
+        data: qrData,
+        size: '250x250',
+        format: format,
+        qzone: '1',
     });
-     if (!forDisplay) {
-        params.set('download', '1');
-    }
     return `${base}?${params.toString()}`;
   }
 
-  const downloadQrCode = (format: 'png' | 'svg') => {
+  const downloadQrCode = async (format: 'png' | 'svg') => {
       if (!qrData || !component.id) return;
-      const url = getQrCodeUrl(format, false);
+      const url = getQrCodeUrl(format);
       try {
-          const link = document.createElement('a');
-          link.href = url;
-          link.setAttribute('download', `component-${component.id}-qrcode.${format}`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          const response = await fetch(url);
+          if (!response.ok) throw new Error('Network response was not ok.');
+          const blob = await response.blob();
+          saveAs(blob, `component-${component.id}-qrcode.${format}`);
 
           toast({
               title: 'Download Started',
@@ -110,7 +102,5 @@ END:VCARD
     </Dialog>
   );
 }
-
-    
 
     
