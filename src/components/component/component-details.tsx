@@ -33,18 +33,17 @@ const stateColorMap: Record<ComponentState, string> = {
 };
 
 export function ComponentDetails({ component }: ComponentDetailsProps) {
-  const lastInspection = component.history.length > 0 ? component.history[component.history.length - 1] : null;
+  const lastInspection = component.history.length > 0 ? component.history[0] : null;
 
   const qrData = `
-Component: ${component.name} (${component.id})
-Type: ${component.type}
-Location: ${component.location}
-Status: ${component.currentState}
-Vendor: ${component.vendor}
-Warranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}
-Last Inspection: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}
-Last Insp. Status: ${lastInspection ? lastInspection.status : 'N/A'}
-Details URL: ${component.qrCode}
+BEGIN:VCARD
+VERSION:3.0
+FN:${component.name} (${component.id})
+ORG:RailTracer Component
+CATEGORIES:${component.type}
+NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}\\nInstall Date: ${new Date(component.installDate).toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${component.vendor}\\nSupply Date: ${new Date(component.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}\\n--LAST INSPECTION--\\nDate: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}\\nInspector: ${lastInspection ? lastInspection.inspector : 'N/A'}\\nStatus: ${lastInspection ? lastInspection.status : 'N/A'}\\nNotes: ${lastInspection ? lastInspection.notes.replace(/\\n/g, ' ') : 'N/A'}
+URL:${component.qrCode}
+END:VCARD
   `.trim();
 
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`;
@@ -113,14 +112,14 @@ Details URL: ${component.qrCode}
                     <DialogTrigger asChild>
                         <Button variant="outline" size="sm">
                             <QrCode className="mr-2 h-4 w-4" />
-                            Show QR Code
+                            Show Detailed QR Code
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-xs">
                         <DialogHeader>
                         <DialogTitle>Component QR Code</DialogTitle>
                         <DialogDescription>
-                            Scan this code to view detailed component information.
+                            Scan this code to view detailed component information. This data is embedded in the code for offline use.
                         </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-center p-4 bg-white rounded-lg">
