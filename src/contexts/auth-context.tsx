@@ -1,14 +1,16 @@
+
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { User } from '@/lib/types';
-import { getUserByEmail, getUserById } from '@/lib/data';
+import { users } from '@/lib/data';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string) => Promise<boolean>;
   logout: () => void;
+  getUserById: (id: string) => User | undefined;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +18,14 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const getUserById = useCallback((id: string): User | undefined => {
+    return users.find(u => u.id === id);
+  }, []);
+
+  const getUserByEmail = (email: string): User | undefined => {
+    return users.find(u => u.email === email);
+  };
 
   useEffect(() => {
     try {
@@ -31,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getUserById]);
 
   const login = useCallback(async (email: string): Promise<boolean> => {
     setLoading(true);
@@ -60,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, getUserById }}>
       {children}
     </AuthContext.Provider>
   );

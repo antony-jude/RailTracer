@@ -11,6 +11,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import jsQR from 'jsqr';
+import { useComponents } from '@/contexts/component-context';
+import type { RailwayComponent } from '@/lib/types';
 
 export default function ScanPage() {
   const router = useRouter();
@@ -19,7 +21,7 @@ export default function ScanPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [scanActive, setScanActive] = useState(false);
-  const [scanResult, setScanResult] = useState<string | null>(null);
+  const { getComponentById, addComponent } = useComponents();
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -71,6 +73,34 @@ export default function ScanPage() {
   useEffect(() => {
     let animationFrameId: number;
 
+    const parseVCard = (vcard: string): Partial<RailwayComponent> & { url?: string } => {
+        const lines = vcard.split('\n');
+        const data: any = {};
+        lines.forEach(line => {
+            if (line.startsWith('FN:')) data.name = line.substring(3).replace(/ \(.+\)/, '').trim();
+            if (line.includes('(') && line.includes(')')) {
+                 const match = line.match(/\(([^)]+)\)/);
+                 if (match) data.id = match[1];
+            }
+            if (line.startsWith('CATEGORIES:')) data.type = line.substring(11).trim();
+            if (line.startsWith('URL:')) data.url = line.substring(4).trim();
+            if (line.startsWith('NOTE:')) {
+                const notes = line.substring(5).split('\\n');
+                notes.forEach(note => {
+                    const [key, value] = note.split(': ');
+                    if (key && value) {
+                        if (key === 'Location') data.location = value.trim();
+                        if (key === 'Vendor') data.vendor = value.trim();
+                        if (key === 'Warranty Until') data.warrantyUntil = new Date(value.trim()).toISOString().split('T')[0];
+                        if (key === 'Supply Date') data.supplyDate = new Date(value.trim()).toISOString().split('T')[0]
+                    }
+                });
+            }
+        });
+        return data;
+    }
+
+
     const tick = () => {
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current && scanActive) {
         const video = videoRef.current;
@@ -88,27 +118,56 @@ export default function ScanPage() {
 
             if (code) {
                 setScanActive(false);
-                setScanResult(code.data);
                 
                 try {
-                    const url = new URL(code.data);
-                    const pathParts = url.pathname.split('/');
-                    const componentId = pathParts[pathParts.length - 1];
+                    let componentId: string | undefined;
 
-                    if (componentId && (url.hostname.includes('railtracer.com') || url.pathname.includes('/components/'))) {
+                    if (code.data.startsWith('BEGIN:VCARD')) {
+                        const vcardData = parseVCard(code.data);
+                        componentId = vcardData.id;
+
+                        if (componentId && !getComponentById(componentId)) {
+                             const newComponent: RailwayComponent = {
+                                id: vcardData.id!,
+                                name: vcardData.name || 'Unknown',
+                                type: vcardData.type || 'Unknown',
+                                location: vcardData.location || 'Unknown',
+                                vendor: vcardData.vendor || 'Unknown',
+                                supplyDate: vcardData.supplyDate || new Date().toISOString().split('T')[0],
+                                warrantyUntil: vcardData.warrantyUntil || new Date().toISOString().split('T')[0],
+                                installDate: new Date().toISOString().split('T')[0],
+                                currentState: 'Unverified',
+                                qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
+                                history: [],
+                            };
+                            addComponent(newComponent);
+                             toast({
+                                title: "New Component Added",
+                                description: `Component ${componentId} has been registered.`
+                            });
+                        }
+
+                    } else { // Assume it's a URL
+                        const url = new URL(code.data);
+                        const pathParts = url.pathname.split('/');
+                        componentId = pathParts[pathParts.length - 1];
+                    }
+
+                    if (componentId) {
                         toast({
                             title: "QR Code Scanned",
-                            description: `Redirecting to component ${componentId}...`
+                            description: `Navigating to component ${componentId}...`
                         });
                         router.push(`/components/${componentId}`);
                     } else {
                         throw new Error("Invalid QR code format.");
                     }
                 } catch(e) {
+                    console.error("Scan error:", e);
                     toast({
                         variant: 'destructive',
                         title: "Invalid QR Code",
-                        description: "This QR code is not a valid RailTracer component link.",
+                        description: "This QR code is not a valid RailTracer component code.",
                     });
                      // Briefly show the error, then restart scanning
                     setTimeout(() => setScanActive(true), 3000);
@@ -128,7 +187,7 @@ export default function ScanPage() {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [scanActive, router, toast]);
+  }, [scanActive, router, toast, addComponent, getComponentById]);
 
   return (
     <div className="space-y-6">
@@ -139,7 +198,7 @@ export default function ScanPage() {
                 </div>
                 <CardTitle className="mt-4 font-headline text-2xl">Scan Component QR Code</CardTitle>
                 <CardDescription>
-                    {scanActive ? "Point your camera at a QR code to scan it." : "Scan complete."}
+                    {scanActive ? "Point your camera at a QR code to scan it." : "Scan complete. Processing..."}
                 </CardDescription>
             </CardHeader>
             <CardContent>

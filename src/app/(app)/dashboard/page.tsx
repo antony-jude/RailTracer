@@ -1,11 +1,14 @@
-import { getComponents } from '@/lib/data';
+
+"use client";
+
+import { useComponents } from '@/contexts/component-context';
 import { Wrench, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { MetricCard } from '@/components/dashboard/metric-card';
 import { ComponentStatusChart } from '@/components/dashboard/component-status-chart';
 import { RecentInspectionsTable } from '@/components/dashboard/recent-inspections-table';
 
 export default function DashboardPage() {
-  const components = getComponents();
+  const { components } = useComponents();
   const totalComponents = components.length;
   const verifiedCount = components.filter(c => c.currentState === 'Verified').length;
   const unverifiedCount = components.filter(c => c.currentState === 'Unverified').length;

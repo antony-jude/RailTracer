@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -11,12 +12,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { FilePenLine, Loader2, Sparkles } from 'lucide-react';
-import type { RailwayComponent, ComponentState } from '@/lib/types';
+import type { RailwayComponent, ComponentState, Inspection } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
 import { MaterialStatusDetector } from '@/components/ai/material-status-detector';
 import { AiSuggestionsDialog } from '@/components/ai/ai-suggestions-dialog';
 import { suggestNextActions, SuggestNextActionsOutput } from '@/ai/flows/inspection-suggestions';
 import { useToast } from '@/hooks/use-toast';
+import { useComponents } from '@/contexts/component-context';
 
 const inspectionSchema = z.object({
   notes: z.string().min(10, { message: 'Inspection notes must be at least 10 characters long.' }),
@@ -32,6 +34,7 @@ type InspectionUpdateFormProps = {
 export function InspectionUpdateForm({ component }: InspectionUpdateFormProps) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { updateComponent } = useComponents();
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestionsDialog, setShowSuggestionsDialog] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<SuggestNextActionsOutput | null>(null);
@@ -45,16 +48,26 @@ export function InspectionUpdateForm({ component }: InspectionUpdateFormProps) {
   });
 
   const onSubmit = async (data: InspectionFormValues) => {
+    if (!user) {
+        toast({ title: "Not Authenticated", description: "You must be logged in to save an inspection.", variant: "destructive"});
+        return;
+    }
+
     setIsLoading(true);
     setAiSuggestions(null);
 
-    // Simulate API call to save inspection
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const newInspection: Inspection = {
+        id: `h-${component.id}-${Date.now()}`,
+        date: new Date().toISOString(),
+        inspectorId: user.id,
+        inspector: user.name,
+        notes: data.notes,
+        status: data.status,
+    };
     
-    console.log('New Inspection:', {
-      componentId: component.id,
-      inspector: user?.name,
-      ...data,
+    updateComponent(component.id, {
+        currentState: data.status,
+        history: [...component.history, newInspection],
     });
 
     try {

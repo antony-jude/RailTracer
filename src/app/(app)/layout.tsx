@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -7,6 +8,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/app-header';
 import { AiChatbot } from '@/components/ai/ai-chatbot';
 import { usePathname } from 'next/navigation';
+import { ComponentProvider } from '@/contexts/component-context';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -32,22 +34,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (pathname.startsWith('/scan')) return 'Scan Component';
     if (pathname.startsWith('/components/')) return 'Component Details';
     if (pathname.startsWith('/components')) return 'All Components';
+    if (pathname.startsWith('/add-component')) return 'Add New Component';
     if (pathname.startsWith('/portals')) return 'External Portals';
     return 'RailTracer';
   }
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-muted/40 md:block">
-        <AppSidebar />
+    <ComponentProvider>
+      <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+        <div className="hidden border-r bg-muted/40 md:block">
+          <AppSidebar />
+        </div>
+        <div className="flex flex-col">
+          <AppHeader pageTitle={getPageTitle()} />
+          <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
+            {children}
+          </main>
+          <AiChatbot />
+        </div>
       </div>
-      <div className="flex flex-col">
-        <AppHeader pageTitle={getPageTitle()} />
-        <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
-          {children}
-        </main>
-        <AiChatbot />
-      </div>
-    </div>
+    </ComponentProvider>
   );
 }

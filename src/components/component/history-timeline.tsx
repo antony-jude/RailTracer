@@ -1,8 +1,11 @@
+
+"use client";
+
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { RailwayComponent, ComponentState } from '@/lib/types';
-import { getUserById } from '@/lib/data';
+import { useAuth } from '@/hooks/use-auth';
 import { FileText } from 'lucide-react';
 
 type HistoryTimelineProps = {
@@ -23,6 +26,23 @@ const stateColorMap: Record<ComponentState, string> = {
 
 
 export function HistoryTimeline({ component }: HistoryTimelineProps) {
+  const { getUserById } = useAuth();
+  
+  const sortedHistory = [...component.history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  if (sortedHistory.length === 0) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-headline">Component History</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground text-sm">No inspection history recorded for this component yet.</p>
+            </CardContent>
+        </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -31,7 +51,7 @@ export function HistoryTimeline({ component }: HistoryTimelineProps) {
       <CardContent>
         <div className="relative pl-6 space-y-8">
             <div className="absolute left-[29px] top-2 bottom-2 w-0.5 bg-border -translate-x-1/2"></div>
-            {component.history.map((item, index) => {
+            {sortedHistory.map((item) => {
                 const inspector = getUserById(item.inspectorId);
                 const inspectorInitials = inspector?.name.split(' ').map(n => n[0]).join('') || '?';
 

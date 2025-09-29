@@ -14,9 +14,9 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ComponentState, RailwayComponent } from '@/lib/types';
-import { getComponents } from '@/lib/data';
+import { useComponents } from '@/contexts/component-context';
 import { Button } from '@/components/ui/button';
-import { QrCode } from 'lucide-react';
+import { PlusCircle, QrCode } from 'lucide-react';
 import { QrCodeDialog } from '@/components/component/qr-code-dialog';
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {
@@ -26,15 +26,23 @@ const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destruc
 };
 
 export default function ComponentsListPage() {
-  const components = getComponents();
+  const { components } = useComponents();
   const [selectedComponent, setSelectedComponent] = useState<RailwayComponent | null>(null);
 
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>All Components</CardTitle>
-          <CardDescription>A complete list of all tracked railway assets.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+                <CardTitle>All Components</CardTitle>
+                <CardDescription>A complete list of all tracked railway assets.</CardDescription>
+            </div>
+             <Button asChild>
+                <Link href="/add-component">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Component
+                </Link>
+            </Button>
         </CardHeader>
         <CardContent>
           <Table>
@@ -49,27 +57,33 @@ export default function ComponentsListPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {components.map((component) => (
-                <TableRow key={component.id}>
-                  <TableCell>
-                    <Link href={`/components/${component.id}`} className="font-medium text-primary hover:underline">
-                      {component.id}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{component.name}</TableCell>
-                  <TableCell className="hidden sm:table-cell">{component.type}</TableCell>
-                  <TableCell className="hidden md:table-cell">{component.location}</TableCell>
-                  <TableCell>
-                    <Badge variant={stateVariantMap[component.currentState]}>{component.currentState}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="icon" onClick={() => setSelectedComponent(component)}>
-                        <QrCode className="h-4 w-4" />
-                        <span className="sr-only">Show QR Code</span>
-                    </Button>
-                  </TableCell>
+              {components.length === 0 ? (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">No components found.</TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                components.map((component) => (
+                    <TableRow key={component.id}>
+                    <TableCell>
+                        <Link href={`/components/${component.id}`} className="font-medium text-primary hover:underline">
+                        {component.id}
+                        </Link>
+                    </TableCell>
+                    <TableCell>{component.name}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{component.type}</TableCell>
+                    <TableCell className="hidden md:table-cell">{component.location}</TableCell>
+                    <TableCell>
+                        <Badge variant={stateVariantMap[component.currentState]}>{component.currentState}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="outline" size="icon" onClick={() => setSelectedComponent(component)}>
+                            <QrCode className="h-4 w-4" />
+                            <span className="sr-only">Show QR Code</span>
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -86,3 +100,4 @@ export default function ComponentsListPage() {
     </>
   );
 }
+

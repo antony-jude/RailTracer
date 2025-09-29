@@ -1,7 +1,8 @@
+
 "use client";
 
-import { useState, use } from 'react';
-import { getComponentById } from '@/lib/data';
+import { useState, use, useEffect } from 'react';
+import { useComponents } from '@/contexts/component-context';
 import { notFound } from 'next/navigation';
 import { ComponentDetails } from '@/components/component/component-details';
 import { HistoryTimeline } from '@/components/component/history-timeline';
@@ -11,6 +12,7 @@ import { FileText, Loader2 } from 'lucide-react';
 import { generateComponentReport } from '@/ai/flows/component-report-generation';
 import { AiReportDialog } from '@/components/ai/ai-report-dialog';
 import { useToast } from '@/hooks/use-toast';
+import type { RailwayComponent } from '@/lib/types';
 
 type ComponentPageProps = {
   params: Promise<{
@@ -21,11 +23,21 @@ type ComponentPageProps = {
 export default function ComponentPage({ params }: ComponentPageProps) {
   const { toast } = useToast();
   const { id } = use(params);
-  const component = getComponentById(id);
+  const { getComponentById } = useComponents();
+  const [component, setComponent] = useState<RailwayComponent | null | undefined>(undefined);
 
   const [isReportLoading, setIsReportLoading] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [aiReport, setAiReport] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const foundComponent = getComponentById(id);
+    setComponent(foundComponent);
+  }, [id, getComponentById]);
+
+  if (component === undefined) {
+      return <div className="flex h-full items-center justify-center">Loading component...</div>
+  }
 
   if (!component) {
     notFound();

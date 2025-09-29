@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, QrCode, Wrench, Globe } from 'lucide-react';
+import { LayoutDashboard, QrCode, Wrench, Globe, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
@@ -10,6 +11,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/scan', icon: QrCode, label: 'Scan Component' },
   { href: '/components', icon: Wrench, label: 'Components' },
+  { href: '/add-component', icon: PlusCircle, label: 'Add Component'},
   { href: '/portals', icon: Globe, label: 'External Portals' },
 ];
 
