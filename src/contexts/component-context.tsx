@@ -17,11 +17,19 @@ interface ComponentContextType {
 
 export const ComponentContext = createContext<ComponentContextType | undefined>(undefined);
 
-const toISOStringSafe = (timestamp: Timestamp | undefined | null | string): string => {
+const toISOStringSafe = (timestamp: unknown): string => {
     if (!timestamp) return new Date().toISOString();
-    if (typeof timestamp === 'string') return timestamp;
-    if (timestamp && typeof timestamp.toDate === 'function') {
+    if (typeof timestamp === 'string') {
+        const date = new Date(timestamp);
+        if (!isNaN(date.getTime())) {
+            return date.toISOString();
+        }
+    }
+    if (timestamp instanceof Timestamp) {
         return timestamp.toDate().toISOString();
+    }
+    if (timestamp && typeof (timestamp as any).toDate === 'function') {
+        return (timestamp as any).toDate().toISOString();
     }
     return new Date().toISOString(); // Sensible fallback
 }
@@ -145,3 +153,5 @@ export const useComponents = () => {
     }
     return context;
 };
+
+    

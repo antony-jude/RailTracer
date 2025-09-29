@@ -37,8 +37,9 @@ export function QrCodeDialog({ component, isOpen, onOpenChange }: QrCodeDialogPr
   const vCardData = `
 BEGIN:VCARD
 VERSION:3.0
-FN:${component.name} (${component.id})
-ORG:RailTracer Component
+FN:${component.name}
+N;CHARSET=UTF-8:${component.name};;;;
+UID:${component.id}
 CATEGORIES:${component.type}
 NOTE;CHARSET=utf-8:${noteContent}
 URL:${publicUrl}
@@ -100,3 +101,5 @@ END:VCARD
     </Dialog>
   );
 }
+
+    

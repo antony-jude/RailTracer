@@ -94,44 +94,34 @@ export default function ScanPage() {
     }
   }, [toast]);
 
-  const parseVCard = (vcard: string): Partial<Omit<RailwayComponent, 'currentState' | 'history'>> & { url?: string } => {
+  const parseVCard = (vcard: string): Partial<Omit<RailwayComponent, 'currentState' | 'history'>> => {
     const lines = vcard.split('\n');
-    const data: any = {};
-    let noteContent = '';
+    const data: any = { note: {} };
     
     lines.forEach(line => {
         const sanitizedLine = line.trim();
         if (sanitizedLine.startsWith('FN:')) {
-            const fn = sanitizedLine.substring(3);
-            const match = fn.match(/(.*) \((.*)\)/);
-            if (match) {
-                data.name = match[1].trim();
-                data.id = match[2].trim();
-            }
+            data.name = sanitizedLine.substring(3).trim();
+        } else if (sanitizedLine.startsWith('UID:')) {
+            data.id = sanitizedLine.substring(4).trim();
         } else if (sanitizedLine.startsWith('CATEGORIES:')) {
             data.type = sanitizedLine.substring(11).trim();
         } else if (sanitizedLine.startsWith('URL:')) {
-            data.url = sanitizedLine.substring(4).trim();
+            data.qrCode = sanitizedLine.substring(4).trim();
         } else if (sanitizedLine.startsWith('NOTE;')) {
-            noteContent = sanitizedLine.substring(sanitizedLine.indexOf(':') + 1);
+            const noteContent = sanitizedLine.substring(sanitizedLine.indexOf(':') + 1);
+            noteContent.replace(/\\n/g, '\n').split('\n').forEach(noteLine => {
+                const [key, ...valueParts] = noteLine.split(':');
+                if (key && valueParts.length > 0) {
+                    const value = valueParts.join(':').trim();
+                    if (key.trim() === 'Location') data.location = value;
+                    else if (key.trim() === 'Vendor') data.vendor = value;
+                    else if (key.trim() === 'SupplyDate') data.supplyDate = value;
+                    else if (key.trim() === 'WarrantyUntil') data.warrantyUntil = value;
+                }
+            });
         }
     });
-
-    if (noteContent) {
-        const notes = noteContent.replace(/\\n/g, '\n').split('\n');
-        notes.forEach(note => {
-            const noteParts = note.split(':');
-            if (noteParts.length >= 2) {
-                const key = noteParts[0].trim().toLowerCase();
-                const value = noteParts.slice(1).join(':').trim();
-                if (key === 'location') data.location = value;
-                else if (key === 'vendor') data.vendor = value;
-                else if (key === 'supply date') data.supplyDate = new Date(value).toISOString();
-                else if (key === 'warranty until') data.warrantyUntil = new Date(value).toISOString();
-                else if (key === 'install date') data.installDate = new Date(value).toISOString();
-            }
-        });
-    }
     
     return data;
   }
@@ -160,9 +150,9 @@ export default function ScanPage() {
                     vendor: vcardData.vendor || 'Unknown',
                     supplyDate: vcardData.supplyDate || new Date().toISOString(),
                     warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
-                    installDate: vcardData.installDate || new Date().toISOString(),
+                    installDate: new Date().toISOString(), // Install date is today on first scan
                     currentState: 'Good',
-                    qrCode: vcardData.url || `${window.location.origin}/c/${vcardData.id}`,
+                    qrCode: vcardData.qrCode || `${window.location.origin}/c/${vcardData.id}`,
                     history: [],
                 };
                 if (currentPosition) {
@@ -355,3 +345,5 @@ export default function ScanPage() {
     </>
   );
 }
+
+    

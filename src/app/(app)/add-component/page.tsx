@@ -50,15 +50,16 @@ export default function AddComponentPage() {
         const noteContent = [
             `Location:${data.location}`,
             `Vendor:${data.vendor}`,
-            `Supply Date:${new Date(data.supplyDate).toLocaleDateString()}`,
-            `Warranty Until:${new Date(data.warrantyUntil).toLocaleDateString()}`
+            `SupplyDate:${new Date(data.supplyDate).toISOString()}`,
+            `WarrantyUntil:${new Date(data.warrantyUntil).toISOString()}`
         ].join('\\n');
 
         const vCardData = `
 BEGIN:VCARD
 VERSION:3.0
-FN:${data.name} (${data.id})
-ORG:RailTracer Component
+FN:${data.name}
+N;CHARSET=UTF-8:${data.name};;;;
+UID:${data.id}
 CATEGORIES:${data.type}
 NOTE;CHARSET=utf-8:${noteContent}
 URL:${qrCodeUrl}
@@ -226,3 +227,5 @@ END:VCARD
     </>
   );
 }
+
+    
