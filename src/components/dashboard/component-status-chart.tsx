@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
@@ -18,25 +19,25 @@ export function ComponentStatusChart({ components }: ComponentStatusChartProps) 
   );
 
   const chartData = [
-    { name: 'Verified', total: statusCounts.Verified || 0, fill: 'var(--color-verified)' },
-    { name: 'Unverified', total: statusCounts.Unverified || 0, fill: 'var(--color-unverified)' },
-    { name: 'Damaged', total: statusCounts.Damaged || 0, fill: 'var(--color-damaged)' },
+    { name: 'Good', total: statusCounts.Good || 0, fill: 'var(--color-good)' },
+    { name: 'Poor', total: statusCounts.Poor || 0, fill: 'var(--color-poor)' },
+    { name: 'Needs Replace', total: statusCounts['Needs Replacement'] || 0, fill: 'var(--color-needs-replacement)' },
   ];
   
   const chartConfig = {
     total: {
       label: "Total",
     },
-    verified: {
-      label: "Verified",
+    good: {
+      label: "Good",
       color: "hsl(var(--chart-4))",
     },
-    unverified: {
-      label: "Unverified",
+    poor: {
+      label: "Poor",
       color: "hsl(var(--chart-2))",
     },
-    damaged: {
-      label: "Damaged",
+    "needs-replacement": {
+      label: "Needs Replacement",
       color: "hsl(var(--chart-3))",
     },
   }
@@ -50,14 +51,14 @@ export function ComponentStatusChart({ components }: ComponentStatusChartProps) 
         <style>
           {`
           :root {
-            --color-verified: ${chartConfig.verified.color};
-            --color-unverified: ${chartConfig.unverified.color};
-            --color-damaged: ${chartConfig.damaged.color};
+            --color-good: ${chartConfig.good.color};
+            --color-poor: ${chartConfig.poor.color};
+            --color-needs-replacement: ${chartConfig['needs-replacement'].color};
           }
           .dark {
-            --color-verified: ${chartConfig.verified.color};
-            --color-unverified: ${chartConfig.unverified.color};
-            --color-damaged: ${chartConfig.damaged.color};
+            --color-good: ${chartConfig.good.color};
+            --color-poor: ${chartConfig.poor.color};
+            --color-needs-replacement: ${chartConfig['needs-replacement'].color};
           }
           `}
         </style>

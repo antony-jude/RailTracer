@@ -22,7 +22,7 @@ import { useComponents } from '@/contexts/component-context';
 
 const inspectionSchema = z.object({
   notes: z.string().min(10, { message: 'Inspection notes must be at least 10 characters long.' }),
-  status: z.enum(['Verified', 'Unverified', 'Damaged'], { required_error: 'You must select a status.' }),
+  status: z.enum(['Good', 'Poor', 'Needs Replacement'], { required_error: 'You must select a status.' }),
 });
 
 type InspectionFormValues = z.infer<typeof inspectionSchema>;
@@ -72,8 +72,8 @@ export function InspectionUpdateForm({ component }: InspectionUpdateFormProps) {
 
     try {
         const suggestions = await suggestNextActions({
-            defectSeverity: data.status === 'Damaged' ? 'High' : (data.status === 'Unverified' ? 'Medium' : 'Low'),
-            repairHistory: component.history.filter(h => h.status === 'Damaged').length > 0 ? 'Has prior repairs' : 'No prior repairs',
+            defectSeverity: data.status === 'Needs Replacement' ? 'High' : (data.status === 'Poor' ? 'Medium' : 'Low'),
+            repairHistory: component.history.filter(h => h.status === 'Needs Replacement').length > 0 ? 'Has prior repairs' : 'No prior repairs',
             componentType: component.type,
             inspectionNotes: data.notes,
         });
@@ -127,7 +127,7 @@ export function InspectionUpdateForm({ component }: InspectionUpdateFormProps) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {(['Verified', 'Unverified', 'Damaged'] as ComponentState[]).map(status => (
+                                            {(['Good', 'Poor', 'Needs Replacement'] as ComponentState[]).map(status => (
                                                 <SelectItem key={status} value={status}>{status}</SelectItem>
                                             ))}
                                         </SelectContent>

@@ -54,7 +54,7 @@ VERSION:3.0
 FN:${data.name} (${data.id})
 ORG:RailTracer Component
 CATEGORIES:${data.type}
-NOTE;CHARSET=utf-8:Location: ${data.location}\\nStatus: Unverified\\nInstall Date: ${new Date().toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${data.vendor}\\nSupply Date: ${new Date(data.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(data.warrantyUntil).toLocaleDateString()}
+NOTE;CHARSET=utf-8:Location: ${data.location}\\nStatus: Good\\nInstall Date: ${new Date().toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${data.vendor}\\nSupply Date: ${new Date(data.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(data.warrantyUntil).toLocaleDateString()}
 URL:${qrCodeUrl}
 END:VCARD
         `.trim();
@@ -80,28 +80,22 @@ END:VCARD
         return `${base}?${params.toString()}`;
     }
 
-    const downloadQrCode = async (format: 'png' | 'svg') => {
+    const downloadQrCode = (format: 'png' | 'svg') => {
         if (!qrData || !componentId) return;
         const url = getQrCodeUrl(format);
         
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok.');
-            const blob = await response.blob();
-            saveAs(blob, `component-${componentId}-qrcode.${format}`);
-
-            toast({
-                title: 'Download Started',
-                description: `QR Code (${format.toUpperCase()}) is downloading.`
-            })
-        } catch (error) {
-            console.error('Failed to download QR code:', error);
-            toast({
-                variant: 'destructive',
-                title: 'Download Failed',
-                description: 'Could not download the QR code. Please try again.'
-            })
-        }
+        // This method avoids CORS issues with the QR server API
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `component-${componentId}-qrcode.${format}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+            title: 'Download Started',
+            description: `QR Code (${format.toUpperCase()}) is downloading.`
+        });
     }
 
 
@@ -232,5 +226,3 @@ END:VCARD
     </>
   );
 }
-
-    

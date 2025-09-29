@@ -13,15 +13,15 @@ type HistoryTimelineProps = {
 };
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {
-    Verified: 'default',
-    Unverified: 'secondary',
-    Damaged: 'destructive',
+    'Good': 'default',
+    'Poor': 'secondary',
+    'Needs Replacement': 'destructive',
 };
 
 const stateColorMap: Record<ComponentState, string> = {
-    Verified: 'border-green-500',
-    Unverified: 'border-yellow-500',
-    Damaged: 'border-red-500',
+    'Good': 'border-green-500',
+    'Poor': 'border-yellow-500',
+    'Needs Replacement': 'border-red-500',
 };
 
 

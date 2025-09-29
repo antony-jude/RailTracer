@@ -12,10 +12,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import jsQR from 'jsqr';
 import { useComponents } from '@/contexts/component-context';
-import type { RailwayComponent } from '@/lib/types';
+import type { RailwayComponent, Inspection, ComponentState } from '@/lib/types';
 import { GeoPoint } from 'firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
+import { UpdateStatusDialog } from '@/components/component/update-status-dialog';
 
 export default function ScanPage() {
+  const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -24,6 +27,9 @@ export default function ScanPage() {
   const [scanActive, setScanActive] = useState(false);
   const { getComponentById, addComponent, updateComponent } = useComponents();
   const [currentPosition, setCurrentPosition] = useState<{latitude: number, longitude: number} | null>(null);
+  const [scannedComponent, setScannedComponent] = useState<RailwayComponent | null>(null);
+  const [isStatusUpdateOpen, setIsStatusUpdateOpen] = useState(false);
+
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -93,12 +99,13 @@ export default function ScanPage() {
     }
   }, [toast]);
 
-  const parseVCard = (vcard: string): Partial<RailwayComponent> & { url?: string } => {
+  const parseVCard = (vcard: string): Partial<Omit<RailwayComponent, 'currentState' | 'history'>> & { url?: string; currentState: ComponentState } => {
     const lines = vcard.split('\n');
     const data: any = {};
     lines.forEach(line => {
-        if (line.startsWith('FN:')) {
-            const fn = line.substring(3);
+        const sanitizedLine = line.trim();
+        if (sanitizedLine.startsWith('FN:')) {
+            const fn = sanitizedLine.substring(3);
             const match = fn.match(/(.*) \((.*)\)/);
             if (match) {
                 data.name = match[1].trim();
@@ -107,10 +114,10 @@ export default function ScanPage() {
                 data.name = fn.trim();
             }
         }
-        if (line.startsWith('CATEGORIES:')) data.type = line.substring(11).trim();
-        if (line.startsWith('URL:')) data.url = line.substring(4).trim();
-        if (line.startsWith('NOTE:')) {
-            const notes = line.substring(5).split('\\n');
+        if (sanitizedLine.startsWith('CATEGORIES:')) data.type = sanitizedLine.substring(11).trim();
+        if (sanitizedLine.startsWith('URL:')) data.url = sanitizedLine.substring(4).trim();
+        if (sanitizedLine.startsWith('NOTE:')) {
+            const notes = sanitizedLine.substring(5).split('\\n');
             notes.forEach(note => {
                 const [key, value] = note.split(': ');
                 if (key && value) {
@@ -124,6 +131,7 @@ export default function ScanPage() {
             });
         }
     });
+    data.currentState = 'Good'; // New components default to good
     return data;
   }
 
@@ -132,15 +140,16 @@ export default function ScanPage() {
     toast({ title: "QR Code Found", description: "Processing..." });
 
     let componentId: string | undefined;
+    let component: RailwayComponent | undefined | null = null;
     let isNewComponent = false;
 
     // 1. Try to parse as vCard for new components
     if (scannedData.startsWith('BEGIN:VCARD')) {
         const vcardData = parseVCard(scannedData);
         if (vcardData.id) {
-            const existingComponent = await getComponentById(vcardData.id);
-            if (!existingComponent) {
-                const newComponent: Omit<RailwayComponent, 'id'> = {
+            component = await getComponentById(vcardData.id);
+            if (!component) {
+                const newComponentData: Omit<RailwayComponent, 'id'> & {id: string} = {
                     id: vcardData.id!,
                     name: vcardData.name || 'Unknown',
                     type: vcardData.type || 'Unknown',
@@ -149,12 +158,13 @@ export default function ScanPage() {
                     supplyDate: vcardData.supplyDate || new Date().toISOString(),
                     warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
                     installDate: new Date().toISOString(),
-                    currentState: 'Verified',
+                    currentState: 'Good',
                     qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
                     history: [],
                     geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
                 };
-                await addComponent(newComponent);
+                await addComponent(newComponentData);
+                component = await getComponentById(vcardData.id);
                 isNewComponent = true;
                 toast({
                     title: "New Component Registered",
@@ -172,35 +182,84 @@ export default function ScanPage() {
                 componentId = pathParts[pathParts.length - 1];
             }
         } catch (e) {
-            // Not a valid URL, will be handled by the final check
+             // Not a valid URL
         }
     }
 
-    // 3. Navigate or show error
+    // 3. Get component data and either show update dialog or navigate
     if (componentId) {
-        if (!isNewComponent && currentPosition) {
-            const componentToUpdate = await getComponentById(componentId);
-            if (componentToUpdate) {
-                await updateComponent(componentId, { 
+        if (!component) {
+            component = await getComponentById(componentId);
+        }
+
+        if (component) {
+             if (currentPosition) {
+                await updateComponent(component.id, { 
                     geoPosition: new GeoPoint(currentPosition.latitude, currentPosition.longitude),
                     location: `Scanned at ${currentPosition.latitude.toFixed(4)}, ${currentPosition.longitude.toFixed(4)}`
                 });
+                component.geoPosition = new GeoPoint(currentPosition.latitude, currentPosition.longitude);
+                component.location = `Scanned at ${currentPosition.latitude.toFixed(4)}, ${currentPosition.longitude.toFixed(4)}`;
             }
+
+            if (!isNewComponent && user && (user.role === 'admin' || user.role === 'staff')) {
+                setScannedComponent(component);
+                setIsStatusUpdateOpen(true);
+            } else {
+                 toast({
+                    title: "Scan Successful",
+                    description: `Navigating to component ${componentId}...`
+                });
+                router.push(`/components/${componentId}`);
+            }
+        } else {
+            toast({ variant: 'destructive', title: "Component Not Found" });
+            setTimeout(() => setScanActive(true), 2000);
         }
-        toast({
-            title: "Scan Successful",
-            description: `Navigating to component ${componentId}...`
-        });
-        router.push(`/components/${componentId}`);
     } else {
         toast({
             variant: 'destructive',
             title: "Invalid QR Code",
             description: "This QR code is not recognized. Please try again.",
         });
-        setTimeout(() => setScanActive(true), 3000);
+        setTimeout(() => setScanActive(true), 2000);
     }
-  }, [getComponentById, addComponent, updateComponent, currentPosition, toast, router]);
+  }, [getComponentById, addComponent, updateComponent, currentPosition, toast, router, user]);
+
+  const handleStatusUpdate = async (newStatus: ComponentState, notes: string) => {
+    if (!scannedComponent || !user) return;
+
+    const newInspection: Inspection = {
+        id: `h-${scannedComponent.id}-${Date.now()}`,
+        date: new Date().toISOString(),
+        inspectorId: user.id,
+        inspector: user.name,
+        notes: notes,
+        status: newStatus,
+    };
+    
+    await updateComponent(scannedComponent.id, {
+        currentState: newStatus,
+        history: [...scannedComponent.history, newInspection],
+    });
+    
+    toast({
+        title: "Status Updated",
+        description: `Component ${scannedComponent.name} status set to ${newStatus}.`
+    });
+
+    setIsStatusUpdateOpen(false);
+    setScannedComponent(null);
+    router.push(`/components/${scannedComponent.id}`);
+  };
+
+  const handleUpdateCancel = () => {
+    if (scannedComponent) {
+        router.push(`/components/${scannedComponent.id}`);
+    }
+    setIsStatusUpdateOpen(false);
+    setScannedComponent(null);
+  }
 
 
   useEffect(() => {
@@ -221,7 +280,7 @@ export default function ScanPage() {
                 inversionAttempts: 'dontInvert',
             });
 
-            if (code) {
+            if (code && code.data) {
                 handleScan(code.data);
             }
         }
@@ -241,45 +300,54 @@ export default function ScanPage() {
   }, [scanActive, handleScan]);
 
   return (
-    <div className="space-y-6">
-        <Card className="text-center">
-            <CardHeader>
-                <div className="mx-auto bg-primary text-primary-foreground rounded-full w-20 h-20 flex items-center justify-center">
-                    <QrCode className="w-12 h-12" />
-                </div>
-                <CardTitle className="mt-4 font-headline text-2xl">Scan Component QR Code</CardTitle>
-                <CardDescription>
-                    {scanActive ? "Point your camera at a QR code to scan it." : "Processing..."}
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="w-full max-w-sm mx-auto aspect-square bg-muted rounded-lg flex items-center justify-center mb-6 overflow-hidden relative">
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                    <canvas ref={canvasRef} className="hidden" />
-                     {scanActive && (
-                        <div className="absolute inset-0 border-4 border-accent rounded-lg animate-pulse"></div>
+    <>
+        <div className="space-y-6">
+            <Card className="text-center">
+                <CardHeader>
+                    <div className="mx-auto bg-primary text-primary-foreground rounded-full w-20 h-20 flex items-center justify-center">
+                        <QrCode className="w-12 h-12" />
+                    </div>
+                    <CardTitle className="mt-4 font-headline text-2xl">Scan Component QR Code</CardTitle>
+                    <CardDescription>
+                        {scanActive ? "Point your camera at a QR code to scan it." : "Processing..."}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="w-full max-w-sm mx-auto aspect-square bg-muted rounded-lg flex items-center justify-center mb-6 overflow-hidden relative">
+                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                        <canvas ref={canvasRef} className="hidden" />
+                        {scanActive && (
+                            <div className="absolute inset-0 border-4 border-accent rounded-lg animate-pulse"></div>
+                        )}
+                    </div>
+
+                    {hasCameraPermission === false && (
+                        <Alert variant="destructive" className="max-w-sm mx-auto mb-4 text-left">
+                            <AlertTitle>Camera Access Required</AlertTitle>
+                            <AlertDescription>
+                            Please allow camera access in your browser settings to use the scanner.
+                            </AlertDescription>
+                        </Alert>
                     )}
-                </div>
+                </CardContent>
+            </Card>
 
-                {hasCameraPermission === false && (
-                    <Alert variant="destructive" className="max-w-sm mx-auto mb-4 text-left">
-                        <AlertTitle>Camera Access Required</AlertTitle>
-                        <AlertDescription>
-                        Please allow camera access in your browser settings to use the scanner.
-                        </AlertDescription>
-                    </Alert>
-                )}
-            </CardContent>
-        </Card>
+            <Separator />
 
-        <Separator />
-
-        <div className="grid md:grid-cols-2 gap-6">
-            <MaterialStatusDetector />
-            <Geolocation />
+            <div className="grid md:grid-cols-2 gap-6">
+                <MaterialStatusDetector />
+                <Geolocation />
+            </div>
         </div>
-    </div>
+
+        {scannedComponent && (
+            <UpdateStatusDialog
+                isOpen={isStatusUpdateOpen}
+                component={scannedComponent}
+                onUpdate={handleStatusUpdate}
+                onCancel={handleUpdateCancel}
+            />
+        )}
+    </>
   );
 }
-
-    

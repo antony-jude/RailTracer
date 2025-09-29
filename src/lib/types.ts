@@ -11,7 +11,7 @@ export type User = {
   avatarUrl: string;
 };
 
-export type ComponentState = 'Verified' | 'Unverified' | 'Damaged';
+export type ComponentState = 'Good' | 'Poor' | 'Needs Replacement';
 
 export type Inspection = {
   id: string;

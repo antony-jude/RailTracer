@@ -19,9 +19,9 @@ import { useComponents } from '@/contexts/component-context';
 
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {
-    Verified: 'default',
-    Unverified: 'secondary',
-    Damaged: 'destructive',
+    'Good': 'default',
+    'Poor': 'secondary',
+    'Needs Replacement': 'destructive',
 };
 
 export function RecentInspectionsTable({ components }: { components: RailwayComponent[]}) {

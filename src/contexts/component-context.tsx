@@ -10,7 +10,7 @@ interface ComponentContextType {
   components: RailwayComponent[];
   loading: boolean;
   getComponentById: (id: string) => Promise<RailwayComponent | undefined>;
-  addComponent: (component: Omit<RailwayComponent, 'id'>) => Promise<string>;
+  addComponent: (component: Omit<RailwayComponent, 'id'> & {id: string}) => Promise<string>;
   updateComponent: (id:string, updates: Partial<RailwayComponent>) => Promise<void>;
 }
 
@@ -69,7 +69,7 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
   
   const addComponent = useCallback(
-    async (component: Omit<RailwayComponent, 'id' | 'geoPosition'> & {id?: string}) => {
+    async (component: Omit<RailwayComponent, 'id' | 'geoPosition'> & {id: string}) => {
         const { id, ...componentData } = component;
         const docRef = doc(db, 'components', id!);
         await setDoc(docRef, {

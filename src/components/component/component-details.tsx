@@ -16,15 +16,15 @@ type ComponentDetailsProps = {
 };
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {
-    Verified: 'default',
-    Unverified: 'secondary',
-    Damaged: 'destructive',
+    'Good': 'default',
+    'Poor': 'secondary',
+    'Needs Replacement': 'destructive',
 };
 
 const stateColorMap: Record<ComponentState, string> = {
-    Verified: 'bg-green-500',
-    Unverified: 'bg-yellow-500',
-    Damaged: 'bg-red-500',
+    'Good': 'bg-green-500',
+    'Poor': 'bg-yellow-500',
+    'Needs Replacement': 'bg-red-500',
 };
 
 export function ComponentDetails({ component }: ComponentDetailsProps) {

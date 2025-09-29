@@ -20,9 +20,9 @@ import { PlusCircle, QrCode, Loader2 } from 'lucide-react';
 import { QrCodeDialog } from '@/components/component/qr-code-dialog';
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {
-    Verified: 'default',
-    Unverified: 'secondary',
-    Damaged: 'destructive',
+    'Good': 'default',
+    'Poor': 'secondary',
+    'Needs Replacement': 'destructive',
 };
 
 export default function ComponentsListPage() {

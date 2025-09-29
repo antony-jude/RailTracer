@@ -10,9 +10,9 @@ import { RecentInspectionsTable } from '@/components/dashboard/recent-inspection
 export default function DashboardPage() {
   const { components } = useComponents();
   const totalComponents = components.length;
-  const verifiedCount = components.filter(c => c.currentState === 'Verified').length;
-  const unverifiedCount = components.filter(c => c.currentState === 'Unverified').length;
-  const damagedCount = components.filter(c => c.currentState === 'Damaged').length;
+  const goodCount = components.filter(c => c.currentState === 'Good').length;
+  const poorCount = components.filter(c => c.currentState === 'Poor').length;
+  const needsReplacementCount = components.filter(c => c.currentState === 'Needs Replacement').length;
 
   return (
     <div className="space-y-6">
@@ -24,20 +24,20 @@ export default function DashboardPage() {
           description="Total assets being tracked"
         />
         <MetricCard
-          title="Verified"
-          value={verifiedCount}
+          title="Good"
+          value={goodCount}
           icon={CheckCircle}
           description="Components in good condition"
         />
         <MetricCard
-          title="Unverified"
-          value={unverifiedCount}
+          title="Poor"
+          value={poorCount}
           icon={AlertTriangle}
           description="Components requiring inspection"
         />
         <MetricCard
-          title="Damaged"
-          value={damagedCount}
+          title="Needs Replacement"
+          value={needsReplacementCount}
           icon={XCircle}
           description="Components needing repair"
         />
