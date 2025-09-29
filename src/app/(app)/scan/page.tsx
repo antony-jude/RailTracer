@@ -136,6 +136,7 @@ export default function ScanPage() {
   }
 
   const handleScan = useCallback(async (scannedData: string) => {
+    if (!scanActive) return;
     setScanActive(false);
     toast({ title: "QR Code Found", description: "Processing..." });
 
@@ -147,9 +148,10 @@ export default function ScanPage() {
     if (scannedData.startsWith('BEGIN:VCARD')) {
         const vcardData = parseVCard(scannedData);
         if (vcardData.id) {
+            componentId = vcardData.id;
             component = await getComponentById(vcardData.id);
             if (!component) {
-                const newComponentData: Omit<RailwayComponent, 'id'> & {id: string} = {
+                const newComponentData: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string} = {
                     id: vcardData.id!,
                     name: vcardData.name || 'Unknown',
                     type: vcardData.type || 'Unknown',
@@ -161,8 +163,11 @@ export default function ScanPage() {
                     currentState: 'Good',
                     qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
                     history: [],
-                    geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
                 };
+                if (currentPosition) {
+                    (newComponentData as any).geoPosition = new GeoPoint(currentPosition.latitude, currentPosition.longitude);
+                }
+                
                 await addComponent(newComponentData);
                 component = await getComponentById(vcardData.id);
                 isNewComponent = true;
@@ -171,7 +176,6 @@ export default function ScanPage() {
                     description: `Component ${vcardData.id} has been added.`
                 });
             }
-            componentId = vcardData.id;
         }
     } else {
         // 2. Try to parse as a URL for existing components
@@ -182,7 +186,7 @@ export default function ScanPage() {
                 componentId = pathParts[pathParts.length - 1];
             }
         } catch (e) {
-             // Not a valid URL
+             // Not a valid URL, do nothing
         }
     }
 
@@ -224,7 +228,7 @@ export default function ScanPage() {
         });
         setTimeout(() => setScanActive(true), 2000);
     }
-  }, [getComponentById, addComponent, updateComponent, currentPosition, toast, router, user]);
+  }, [getComponentById, addComponent, updateComponent, currentPosition, toast, router, user, scanActive]);
 
   const handleStatusUpdate = async (newStatus: ComponentState, notes: string) => {
     if (!scannedComponent || !user) return;
@@ -320,14 +324,13 @@ export default function ScanPage() {
                             <div className="absolute inset-0 border-4 border-accent rounded-lg animate-pulse"></div>
                         )}
                     </div>
-
                     {hasCameraPermission === false && (
-                        <Alert variant="destructive" className="max-w-sm mx-auto mb-4 text-left">
-                            <AlertTitle>Camera Access Required</AlertTitle>
-                            <AlertDescription>
-                            Please allow camera access in your browser settings to use the scanner.
-                            </AlertDescription>
-                        </Alert>
+                        <Alert variant="destructive">
+                              <AlertTitle>Camera Access Required</AlertTitle>
+                              <AlertDescription>
+                                Please allow camera access to use this feature.
+                              </AlertDescription>
+                      </Alert>
                     )}
                 </CardContent>
             </Card>
@@ -351,3 +354,5 @@ export default function ScanPage() {
     </>
   );
 }
+
+    
