@@ -13,6 +13,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import jsQR from 'jsqr';
 import { useComponents } from '@/contexts/component-context';
 import type { RailwayComponent } from '@/lib/types';
+import { GeoPoint } from 'firebase/firestore';
 
 export default function ScanPage() {
   const router = useRouter();
@@ -21,7 +22,8 @@ export default function ScanPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [scanActive, setScanActive] = useState(false);
-  const { getComponentById, addComponent } = useComponents();
+  const { getComponentById, addComponent, updateComponent } = useComponents();
+  const [currentPosition, setCurrentPosition] = useState<{latitude: number, longitude: number} | null>(null);
 
   useEffect(() => {
     const getCameraPermission = async () => {
@@ -60,7 +62,28 @@ export default function ScanPage() {
       }
     };
 
+    const watchLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    setCurrentPosition({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                    });
+                },
+                () => {
+                    toast({
+                        variant: 'destructive',
+                        title: 'Location Error',
+                        description: 'Could not get your location. Component location will not be updated.',
+                    });
+                }
+            );
+        }
+    };
+
     getCameraPermission();
+    watchLocation();
 
     return () => {
         if (videoRef.current && videoRef.current.srcObject) {
@@ -101,7 +124,7 @@ export default function ScanPage() {
     }
 
 
-    const tick = () => {
+    const tick = async () => {
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current && scanActive) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -121,30 +144,35 @@ export default function ScanPage() {
                 
                 try {
                     let componentId: string | undefined;
+                    let existingComponent: RailwayComponent | undefined;
 
                     if (code.data.startsWith('BEGIN:VCARD')) {
                         const vcardData = parseVCard(code.data);
                         componentId = vcardData.id;
 
-                        if (componentId && !getComponentById(componentId)) {
-                             const newComponent: RailwayComponent = {
-                                id: vcardData.id!,
-                                name: vcardData.name || 'Unknown',
-                                type: vcardData.type || 'Unknown',
-                                location: vcardData.location || 'Unknown',
-                                vendor: vcardData.vendor || 'Unknown',
-                                supplyDate: vcardData.supplyDate || new Date().toISOString().split('T')[0],
-                                warrantyUntil: vcardData.warrantyUntil || new Date().toISOString().split('T')[0],
-                                installDate: new Date().toISOString().split('T')[0],
-                                currentState: 'Unverified',
-                                qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
-                                history: [],
-                            };
-                            addComponent(newComponent);
-                             toast({
-                                title: "New Component Added",
-                                description: `Component ${componentId} has been registered.`
-                            });
+                        if (componentId) {
+                            existingComponent = await getComponentById(componentId);
+                            if (!existingComponent) {
+                                const newComponent: Omit<RailwayComponent, 'id'> = {
+                                    id: vcardData.id!,
+                                    name: vcardData.name || 'Unknown',
+                                    type: vcardData.type || 'Unknown',
+                                    location: vcardData.location || 'Unknown',
+                                    vendor: vcardData.vendor || 'Unknown',
+                                    supplyDate: vcardData.supplyDate || new Date().toISOString(),
+                                    warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
+                                    installDate: new Date().toISOString(),
+                                    currentState: 'Unverified',
+                                    qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
+                                    history: [],
+                                    geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
+                                };
+                                await addComponent(newComponent);
+                                toast({
+                                    title: "New Component Added",
+                                    description: `Component ${componentId} has been registered.`
+                                });
+                            }
                         }
 
                     } else { // Assume it's a URL
@@ -154,6 +182,11 @@ export default function ScanPage() {
                     }
 
                     if (componentId) {
+                         if (currentPosition) {
+                            await updateComponent(componentId, { 
+                                geoPosition: new GeoPoint(currentPosition.latitude, currentPosition.longitude) 
+                            });
+                        }
                         toast({
                             title: "QR Code Scanned",
                             description: `Navigating to component ${componentId}...`
@@ -187,7 +220,7 @@ export default function ScanPage() {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [scanActive, router, toast, addComponent, getComponentById]);
+  }, [scanActive, router, toast, addComponent, getComponentById, updateComponent, currentPosition]);
 
   return (
     <div className="space-y-6">

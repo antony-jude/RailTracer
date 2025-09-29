@@ -47,15 +47,15 @@ export default function AddComponentPage() {
         },
     });
 
-    const onSubmit = (data: ComponentFormValues) => {
+    const onSubmit = async (data: ComponentFormValues) => {
         const newComponent: RailwayComponent = {
-        ...data,
-        installDate: new Date().toISOString().split('T')[0],
-        currentState: 'Unverified',
-        qrCode: `${window.location.origin}/components/${data.id}`,
-        history: [],
+          ...data,
+          installDate: new Date().toISOString().split('T')[0],
+          currentState: 'Unverified',
+          qrCode: `${window.location.origin}/components/${data.id}`,
+          history: [],
         };
-        addComponent(newComponent);
+        await addComponent(newComponent);
         setGeneratedComponent(newComponent);
         toast({
             title: "Component Created",

@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import type { ComponentState, RailwayComponent } from '@/lib/types';
 import { useComponents } from '@/contexts/component-context';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, QrCode } from 'lucide-react';
+import { PlusCircle, QrCode, Loader2 } from 'lucide-react';
 import { QrCodeDialog } from '@/components/component/qr-code-dialog';
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {
@@ -26,7 +26,7 @@ const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destruc
 };
 
 export default function ComponentsListPage() {
-  const { components } = useComponents();
+  const { components, loading } = useComponents();
   const [selectedComponent, setSelectedComponent] = useState<RailwayComponent | null>(null);
 
   return (
@@ -57,7 +57,16 @@ export default function ComponentsListPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {components.length === 0 ? (
+              {loading ? (
+                 <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">
+                        <div className="flex justify-center items-center">
+                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                            <span>Loading components...</span>
+                        </div>
+                    </TableCell>
+                </TableRow>
+              ) : components.length === 0 ? (
                 <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">No components found.</TableCell>
                 </TableRow>
@@ -100,4 +109,3 @@ export default function ComponentsListPage() {
     </>
   );
 }
-

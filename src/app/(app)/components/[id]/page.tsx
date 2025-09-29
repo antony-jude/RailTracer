@@ -31,8 +31,11 @@ export default function ComponentPage({ params }: ComponentPageProps) {
   const [aiReport, setAiReport] = useState<string | null>(null);
   
   useEffect(() => {
-    const foundComponent = getComponentById(id);
-    setComponent(foundComponent);
+    const fetchComponent = async () => {
+        const foundComponent = await getComponentById(id);
+        setComponent(foundComponent);
+    }
+    fetchComponent();
   }, [id, getComponentById]);
 
   if (component === undefined) {

@@ -17,5 +17,3 @@ export const users: User[] = [
     avatarUrl: 'https://i.pravatar.cc/150?u=staff@railtracer.com',
   },
 ];
-
-export const components: RailwayComponent[] = [];

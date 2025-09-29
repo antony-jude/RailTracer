@@ -1,3 +1,6 @@
+
+import type { GeoPoint } from 'firebase/firestore';
+
 export type UserRole = 'admin' | 'staff' | 'public';
 
 export type User = {
@@ -31,4 +34,5 @@ export type RailwayComponent = {
   vendor: string;
   warrantyUntil: string;
   supplyDate: string;
+  geoPosition?: GeoPoint;
 };

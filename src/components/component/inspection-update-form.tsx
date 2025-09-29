@@ -65,7 +65,7 @@ export function InspectionUpdateForm({ component }: InspectionUpdateFormProps) {
         status: data.status,
     };
     
-    updateComponent(component.id, {
+    await updateComponent(component.id, {
         currentState: data.status,
         history: [...component.history, newInspection],
     });
