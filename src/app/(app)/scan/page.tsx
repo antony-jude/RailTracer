@@ -152,6 +152,7 @@ export default function ScanPage() {
                 try {
                     let componentId: string | undefined;
 
+                    // 1. Try parsing as vCard for new components
                     if (code.data.startsWith('BEGIN:VCARD')) {
                         const vcardData = parseVCard(code.data);
                         componentId = vcardData.id;
@@ -181,6 +182,7 @@ export default function ScanPage() {
                             }
                         }
                     } else { 
+                        // 2. Try parsing as URL for existing components
                         try {
                             const url = new URL(code.data);
                             const pathParts = url.pathname.split('/');
@@ -276,3 +278,5 @@ export default function ScanPage() {
     </div>
   );
 }
+
+    
