@@ -1,18 +1,13 @@
 
+"use client";
+
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { RailwayComponent, ComponentState } from '@/lib/types';
 import { Calendar, MapPin, QrCode, Wrench, ShieldCheck, Building, Truck } from 'lucide-react';
-import Image from 'next/image';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Button } from '../ui/button';
+import { QrCodeDialog } from './qr-code-dialog';
 
 type ComponentDetailsProps = {
   component: RailwayComponent;
@@ -33,104 +28,83 @@ const stateColorMap: Record<ComponentState, string> = {
 };
 
 export function ComponentDetails({ component }: ComponentDetailsProps) {
-  const lastInspection = component.history.length > 0 ? component.history[0] : null;
-
-  const qrData = `
-BEGIN:VCARD
-VERSION:3.0
-FN:${component.name} (${component.id})
-ORG:RailTracer Component
-CATEGORIES:${component.type}
-NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}\\nInstall Date: ${new Date(component.installDate).toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${component.vendor}\\nSupply Date: ${new Date(component.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(component.warrantyUntil).toLocaleDateString()}\\n--LAST INSPECTION--\\nDate: ${lastInspection ? new Date(lastInspection.date).toLocaleDateString() : 'N/A'}\\nInspector: ${lastInspection ? lastInspection.inspector : 'N/A'}\\nStatus: ${lastInspection ? lastInspection.status : 'N/A'}\\nNotes: ${lastInspection ? lastInspection.notes.replace(/\\n/g, ' ') : 'N/A'}
-URL:${component.qrCode}
-END:VCARD
-  `.trim();
-
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`;
+  const [showQrDialog, setShowQrDialog] = useState(false);
   
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+              <div>
+                  <CardTitle className="font-headline text-2xl">{component.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{component.id}</p>
+              </div>
+              <Badge variant={stateVariantMap[component.currentState]} className="text-sm">
+                  <span className={`w-2 h-2 rounded-full mr-2 ${stateColorMap[component.currentState]}`}></span>
+                  {component.currentState}
+              </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div className="flex items-center gap-3">
+            <Wrench className="w-5 h-5 text-muted-foreground" />
             <div>
-                <CardTitle className="font-headline text-2xl">{component.name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{component.id}</p>
+              <p className="text-sm text-muted-foreground">Type</p>
+              <p className="font-medium">{component.type}</p>
             </div>
-            <Badge variant={stateVariantMap[component.currentState]} className="text-sm">
-                <span className={`w-2 h-2 rounded-full mr-2 ${stateColorMap[component.currentState]}`}></span>
-                {component.currentState}
-            </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <div className="flex items-center gap-3">
-          <Wrench className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">Type</p>
-            <p className="font-medium">{component.type}</p>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <MapPin className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">Location</p>
-            <p className="font-medium">{component.location}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Calendar className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">Install Date</p>
-            <p className="font-medium">{new Date(component.installDate).toLocaleDateString()}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Truck className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">Supply Date</p>
-            <p className="font-medium">{new Date(component.supplyDate).toLocaleDateString()}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Building className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">Vendor</p>
-            <p className="font-medium">{component.vendor}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="w-5 h-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm text-muted-foreground">Warranty</p>
-            <p className="font-medium">Until {new Date(component.warrantyUntil).toLocaleDateString()}</p>
-          </div>
-        </div>
-         <div className="flex items-start gap-3 md:col-span-2">
-            <QrCode className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-1" />
-            <div className="space-y-2">
-                 <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                            <QrCode className="mr-2 h-4 w-4" />
-                            Show Detailed QR Code
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-xs">
-                        <DialogHeader>
-                        <DialogTitle>Component QR Code</DialogTitle>
-                        <DialogDescription>
-                            Scan this code to view detailed component information. This data is embedded in the code for offline use.
-                        </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex items-center justify-center p-4 bg-white rounded-lg">
-                        <Image src={qrCodeUrl} alt={`QR Code for ${component.id}`} width={250} height={250} />
-                        </div>
-                    </DialogContent>
-                </Dialog>
-                <p className="text-xs text-muted-foreground break-all">{component.qrCode}</p>
+          <div className="flex items-center gap-3">
+            <MapPin className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Location</p>
+              <p className="font-medium">{component.location}</p>
             </div>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Install Date</p>
+              <p className="font-medium">{new Date(component.installDate).toLocaleDateString()}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Truck className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Supply Date</p>
+              <p className="font-medium">{new Date(component.supplyDate).toLocaleDateString()}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Building className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Vendor</p>
+              <p className="font-medium">{component.vendor}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm text-muted-foreground">Warranty</p>
+              <p className="font-medium">Until {new Date(component.warrantyUntil).toLocaleDateString()}</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 md:col-span-2">
+              <QrCode className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-1" />
+              <div className="space-y-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowQrDialog(true)}>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      Show Detailed QR Code
+                  </Button>
+                  <p className="text-xs text-muted-foreground break-all">{component.qrCode}</p>
+              </div>
+          </div>
+        </CardContent>
+      </Card>
+      <QrCodeDialog
+        component={component}
+        isOpen={showQrDialog}
+        onOpenChange={setShowQrDialog}
+      />
+    </>
   );
 }
