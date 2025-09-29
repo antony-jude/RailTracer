@@ -18,22 +18,45 @@ export function Geolocation() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userLocation = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-        setLocation(userLocation);
-        const nearest = findNearestStation(userLocation.latitude, userLocation.longitude);
-        setNearestStation(nearest);
-        setLoading(false);
-      },
-      () => {
-        setError('Unable to retrieve your location. Please enable location services.');
-        setLoading(false);
+    const handleSuccess = (position: GeolocationPosition) => {
+      const userLocation = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+      setLocation(userLocation);
+      const nearest = findNearestStation(userLocation.latitude, userLocation.longitude);
+      setNearestStation(nearest);
+      setLoading(false);
+      setError(null);
+    };
+
+    const handleError = (error: GeolocationPositionError) => {
+      setLoading(false);
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          setError("User denied the request for Geolocation.");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          setError("Location information is unavailable.");
+          break;
+        case error.TIMEOUT:
+          setError("The request to get user location timed out.");
+          break;
+        default:
+          setError("An unknown error occurred.");
+          break;
       }
-    );
+    };
+
+    const watcherId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+    });
+
+    return () => {
+      navigator.geolocation.clearWatch(watcherId);
+    };
   }, []);
 
   return (
