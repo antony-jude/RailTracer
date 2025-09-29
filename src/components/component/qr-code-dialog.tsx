@@ -46,6 +46,7 @@ END:VCARD
         'qr-code-text': qrData,
         'image-format': format.toUpperCase(),
         'font-name': 'Roboto',
+        'qr-code-styling': 'dots',
         'marker-center-template': 'circle',
         'marker-left-template': 'circle',
         'marker-right-template': 'circle',
@@ -109,5 +110,7 @@ END:VCARD
     </Dialog>
   );
 }
+
+    
 
     

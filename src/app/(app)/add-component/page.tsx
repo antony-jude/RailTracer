@@ -75,6 +75,7 @@ END:VCARD
             'qr-code-text': qrData,
             'image-format': format.toUpperCase(),
             'font-name': 'Roboto', // required param for this service
+            'qr-code-styling': 'dots',
             'marker-center-template': 'circle',
             'marker-left-template': 'circle',
             'marker-right-template': 'circle',
@@ -241,5 +242,7 @@ END:VCARD
     </>
   );
 }
+
+    
 
     
