@@ -11,13 +11,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ComponentState, RailwayComponent } from '@/lib/types';
 import { useComponents } from '@/contexts/component-context';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, QrCode, Loader2 } from 'lucide-react';
+import { PlusCircle, QrCode, Loader2, Trash2 } from 'lucide-react';
 import { QrCodeDialog } from '@/components/component/qr-code-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {
     'Good': 'default',
@@ -26,8 +39,31 @@ const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destruc
 };
 
 export default function ComponentsListPage() {
-  const { components, loading } = useComponents();
+  const { user } = useAuth();
+  const { components, loading, deleteComponent } = useComponents();
+  const { toast } = useToast();
   const [selectedComponent, setSelectedComponent] = useState<RailwayComponent | null>(null);
+  const [componentToDelete, setComponentToDelete] = useState<RailwayComponent | null>(null);
+
+  const handleDelete = async () => {
+    if (!componentToDelete) return;
+    try {
+      await deleteComponent(componentToDelete.id);
+      toast({
+        title: "Component Deleted",
+        description: `Component ${componentToDelete.name} has been removed.`,
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete component.",
+      });
+    } finally {
+      setComponentToDelete(null);
+    }
+  };
+
 
   return (
     <>
@@ -84,11 +120,17 @@ export default function ComponentsListPage() {
                     <TableCell>
                         <Badge variant={stateVariantMap[component.currentState]}>{component.currentState}</Badge>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
                         <Button variant="outline" size="icon" onClick={() => setSelectedComponent(component)}>
                             <QrCode className="h-4 w-4" />
                             <span className="sr-only">Show QR Code</span>
                         </Button>
+                        {user?.role === 'admin' && (
+                           <Button variant="destructive" size="icon" onClick={() => setComponentToDelete(component)}>
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete Component</span>
+                            </Button>
+                        )}
                     </TableCell>
                     </TableRow>
                 ))
@@ -106,6 +148,23 @@ export default function ComponentsListPage() {
             }
         }}
       />
+      <AlertDialog open={!!componentToDelete} onOpenChange={(isOpen) => !isOpen && setComponentToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the component 
+                <span className="font-semibold"> {componentToDelete?.name} ({componentToDelete?.id})</span>.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                Yes, delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

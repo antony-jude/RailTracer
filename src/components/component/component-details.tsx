@@ -11,8 +11,6 @@ import { QrCodeDialog } from './qr-code-dialog';
 
 type ComponentDetailsProps = {
   component: RailwayComponent;
-  onGenerateReport: () => void;
-  isReportLoading: boolean;
 };
 
 const stateVariantMap: Record<ComponentState, "default" | "secondary" | "destructive"> = {

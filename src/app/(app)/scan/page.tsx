@@ -157,7 +157,7 @@ export default function ScanPage() {
             componentId = vcardData.id;
             component = await getComponentById(vcardData.id);
             if (!component) {
-                const newComponentData: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string} = {
+                const newComponentData: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string, geoPosition?: GeoPoint} = {
                     id: vcardData.id!,
                     name: vcardData.name || 'Unknown',
                     type: vcardData.type || 'Unknown',
@@ -171,7 +171,7 @@ export default function ScanPage() {
                     history: [],
                 };
                 if (currentPosition) {
-                    (newComponentData as any).geoPosition = new GeoPoint(currentPosition.latitude, currentPosition.longitude);
+                    newComponentData.geoPosition = new GeoPoint(currentPosition.latitude, currentPosition.longitude);
                 }
                 
                 await addComponent(newComponentData);
@@ -269,6 +269,8 @@ export default function ScanPage() {
     }
     setIsStatusUpdateOpen(false);
     setScannedComponent(null);
+    // Resume scanning if user cancels
+    setTimeout(() => setScanActive(true), 500);
   }
 
 
@@ -360,5 +362,3 @@ export default function ScanPage() {
     </>
   );
 }
-
-    

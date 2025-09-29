@@ -4,19 +4,22 @@
 import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
 import type { RailwayComponent } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, getDoc, addDoc, updateDoc, setDoc, Timestamp, GeoPoint } from 'firebase/firestore';
+import { collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, Timestamp, GeoPoint } from 'firebase/firestore';
 
 interface ComponentContextType {
   components: RailwayComponent[];
   loading: boolean;
   getComponentById: (id: string) => Promise<RailwayComponent | undefined>;
-  addComponent: (component: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string}) => Promise<string>;
+  addComponent: (component: Omit<RailwayComponent, 'id' | 'geoPosition' > & {id: string, geoPosition?: GeoPoint}) => Promise<string>;
   updateComponent: (id:string, updates: Partial<RailwayComponent>) => Promise<void>;
+  deleteComponent: (id: string) => Promise<void>;
 }
 
 export const ComponentContext = createContext<ComponentContextType | undefined>(undefined);
 
-const toISOStringSafe = (timestamp: Timestamp | undefined | null): string => {
+const toISOStringSafe = (timestamp: Timestamp | undefined | null | string): string => {
+    if (!timestamp) return new Date().toISOString();
+    if (typeof timestamp === 'string') return timestamp;
     if (timestamp && typeof timestamp.toDate === 'function') {
         return timestamp.toDate().toISOString();
     }
@@ -76,17 +79,23 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
   
   const addComponent = useCallback(
-    async (component: Omit<RailwayComponent, 'id' | 'geoPosition'> & {id: string}) => {
+    async (component: Omit<RailwayComponent, 'id' | 'geoPosition'> & {id: string, geoPosition?: GeoPoint}) => {
         const { id, ...componentData } = component;
         const docRef = doc(db, 'components', id!);
-        await setDoc(docRef, {
+
+        const dataToSet: any = {
           ...componentData,
           installDate: Timestamp.fromDate(new Date(componentData.installDate)),
           supplyDate: Timestamp.fromDate(new Date(componentData.supplyDate)),
           warrantyUntil: Timestamp.fromDate(new Date(componentData.warrantyUntil)),
           history: [],
-          geoPosition: componentData.geoPosition ? new GeoPoint(componentData.geoPosition.latitude, componentData.geoPosition.longitude) : null,
-        });
+        };
+
+        if (component.geoPosition) {
+          dataToSet.geoPosition = component.geoPosition;
+        }
+
+        await setDoc(docRef, dataToSet);
         return id!;
     }, []
   );
@@ -114,9 +123,16 @@ export const ComponentProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }, []
   );
 
+  const deleteComponent = useCallback(
+    async (id: string) => {
+        const docRef = doc(db, 'components', id);
+        await deleteDoc(docRef);
+    }, []
+  );
+
 
   return (
-    <ComponentContext.Provider value={{ components, loading, getComponentById, addComponent, updateComponent }}>
+    <ComponentContext.Provider value={{ components, loading, getComponentById, addComponent, updateComponent, deleteComponent }}>
       {children}
     </ComponentContext.Provider>
   );

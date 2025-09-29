@@ -2,17 +2,30 @@
 "use client";
 
 import { useState, use, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useComponents } from '@/contexts/component-context';
+import { useAuth } from '@/hooks/use-auth';
 import { notFound } from 'next/navigation';
 import { ComponentDetails } from '@/components/component/component-details';
 import { HistoryTimeline } from '@/components/component/history-timeline';
 import { InspectionUpdateForm } from '@/components/component/inspection-update-form';
 import { Button } from '@/components/ui/button';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Trash2 } from 'lucide-react';
 import { generateComponentReport } from '@/ai/flows/component-report-generation';
 import { AiReportDialog } from '@/components/ai/ai-report-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { RailwayComponent } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type ComponentPageProps = {
   params: Promise<{
@@ -22,8 +35,10 @@ type ComponentPageProps = {
 
 export default function ComponentPage({ params }: ComponentPageProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const { user } = useAuth();
   const { id } = use(params);
-  const { getComponentById } = useComponents();
+  const { getComponentById, deleteComponent } = useComponents();
   const [component, setComponent] = useState<RailwayComponent | null | undefined>(undefined);
 
   const [isReportLoading, setIsReportLoading] = useState(false);
@@ -66,6 +81,25 @@ export default function ComponentPage({ params }: ComponentPageProps) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!component) return;
+    try {
+      await deleteComponent(component.id);
+      toast({
+        title: "Component Deleted",
+        description: `Component ${component.name} has been successfully removed.`,
+      });
+      router.push('/components');
+    } catch (error) {
+      console.error('Delete component error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Delete Error',
+        description: 'Could not delete the component at this time.',
+      });
+    }
+  };
+
 
   return (
     <>
@@ -73,8 +107,6 @@ export default function ComponentPage({ params }: ComponentPageProps) {
           <div className="lg:col-span-2 space-y-6">
               <ComponentDetails 
                 component={component}
-                onGenerateReport={handleGenerateReport}
-                isReportLoading={isReportLoading}
               />
               <HistoryTimeline component={component} />
           </div>
@@ -88,6 +120,33 @@ export default function ComponentPage({ params }: ComponentPageProps) {
                       )}
                       Generate AI Report
                   </Button>
+                  
+                  {user?.role === 'admin' && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Component
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the
+                            component and all of its associated history.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+                            Yes, delete component
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                  
                   <InspectionUpdateForm component={component} />
               </div>
           </div>
