@@ -100,10 +100,15 @@ export default function ScanPage() {
         const lines = vcard.split('\n');
         const data: any = {};
         lines.forEach(line => {
-            if (line.startsWith('FN:')) data.name = line.substring(3).replace(/ \(.+\)/, '').trim();
-            if (line.includes('(') && line.includes(')')) {
-                 const match = line.match(/\(([^)]+)\)/);
-                 if (match) data.id = match[1];
+            if (line.startsWith('FN:')) {
+                const fn = line.substring(3);
+                const match = fn.match(/(.*) \((.*)\)/);
+                if (match) {
+                    data.name = match[1].trim();
+                    data.id = match[2].trim();
+                } else {
+                    data.name = fn.trim();
+                }
             }
             if (line.startsWith('CATEGORIES:')) data.type = line.substring(11).trim();
             if (line.startsWith('URL:')) data.url = line.substring(4).trim();
@@ -112,10 +117,12 @@ export default function ScanPage() {
                 notes.forEach(note => {
                     const [key, value] = note.split(': ');
                     if (key && value) {
-                        if (key === 'Location') data.location = value.trim();
-                        if (key === 'Vendor') data.vendor = value.trim();
-                        if (key === 'Warranty Until') data.warrantyUntil = new Date(value.trim()).toISOString().split('T')[0];
-                        if (key === 'Supply Date') data.supplyDate = new Date(value.trim()).toISOString().split('T')[0]
+                        const val = value.trim();
+                        if (key === 'Location') data.location = val;
+                        if (key === 'Vendor') data.vendor = val;
+                        if (key === 'Install Date') data.installDate = new Date(val).toISOString();
+                        if (key === 'Warranty Until') data.warrantyUntil = new Date(val).toISOString();
+                        if (key === 'Supply Date') data.supplyDate = new Date(val).toISOString();
                     }
                 });
             }
@@ -160,7 +167,7 @@ export default function ScanPage() {
                                     vendor: vcardData.vendor || 'Unknown',
                                     supplyDate: vcardData.supplyDate || new Date().toISOString(),
                                     warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
-                                    installDate: new Date().toISOString(),
+                                    installDate: vcardData.installDate || new Date().toISOString(),
                                     currentState: 'Unverified',
                                     qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
                                     history: [],
@@ -168,8 +175,8 @@ export default function ScanPage() {
                                 };
                                 await addComponent(newComponent);
                                 toast({
-                                    title: "New Component Added",
-                                    description: `Component ${componentId} has been registered.`
+                                    title: "New Component Registered",
+                                    description: `Component ${componentId} has been added to the database.`
                                 });
                             }
                         }
@@ -187,7 +194,8 @@ export default function ScanPage() {
                     if (componentId) {
                          if (currentPosition) {
                             await updateComponent(componentId, { 
-                                geoPosition: new GeoPoint(currentPosition.latitude, currentPosition.longitude) 
+                                geoPosition: new GeoPoint(currentPosition.latitude, currentPosition.longitude),
+                                location: `Scanned at ${currentPosition.latitude.toFixed(4)}, ${currentPosition.longitude.toFixed(4)}`
                             });
                         }
                         toast({
@@ -266,5 +274,3 @@ export default function ScanPage() {
     </div>
   );
 }
-
-    

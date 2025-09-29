@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,12 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { QrCode, Wand2 } from 'lucide-react';
-import { QrCodeDialog } from '@/components/component/qr-code-dialog';
-import type { RailwayComponent } from '@/lib/types';
-import { useComponents } from '@/contexts/component-context';
-import { useRouter } from 'next/navigation';
+import { QrCode, Wand2, Download, FileType } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { saveAs } from 'file-saver';
+import { Separator } from '@/components/ui/separator';
 
 const componentSchema = z.object({
   id: z.string().min(3, { message: 'Component ID must be at least 3 characters.' }),
@@ -29,10 +28,9 @@ const componentSchema = z.object({
 type ComponentFormValues = z.infer<typeof componentSchema>;
 
 export default function AddComponentPage() {
-    const router = useRouter();
     const { toast } = useToast();
-    const { addComponent } = useComponents();
-    const [generatedComponent, setGeneratedComponent] = useState<RailwayComponent | null>(null);
+    const [qrData, setQrData] = useState<string | null>(null);
+    const [componentId, setComponentId] = useState<string | null>(null);
 
     const form = useForm<ComponentFormValues>({
         resolver: zodResolver(componentSchema),
@@ -47,27 +45,55 @@ export default function AddComponentPage() {
         },
     });
 
-    const onSubmit = async (data: ComponentFormValues) => {
-        const newComponent: RailwayComponent = {
-          ...data,
-          installDate: new Date().toISOString().split('T')[0],
-          currentState: 'Unverified',
-          qrCode: `${window.location.origin}/components/${data.id}`,
-          history: [],
-        };
-        await addComponent(newComponent);
-        setGeneratedComponent(newComponent);
+    const onSubmit = (data: ComponentFormValues) => {
+        const qrCodeUrl = `${window.location.origin}/components/${data.id}`;
+        
+        const vCardData = `
+BEGIN:VCARD
+VERSION:3.0
+FN:${data.name} (${data.id})
+ORG:RailTracer Component
+CATEGORIES:${data.type}
+NOTE;CHARSET=utf-8:Location: ${data.location}\\nStatus: Unverified\\nInstall Date: ${new Date().toLocaleDateString()}\\n--MANUFACTURER--\\nVendor: ${data.vendor}\\nSupply Date: ${new Date(data.supplyDate).toLocaleDateString()}\\nWarranty Until: ${new Date(data.warrantyUntil).toLocaleDateString()}
+URL:${qrCodeUrl}
+END:VCARD
+        `.trim();
+        
+        setQrData(vCardData);
+        setComponentId(data.id);
         toast({
-            title: "Component Created",
-            description: `QR code for ${newComponent.name} is ready.`
-        })
+            title: "QR Code Generated",
+            description: `QR code for ${data.name} is ready to be downloaded.`
+        });
     };
+    
+    const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
+        if (!qrData) return '';
+        return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}&format=${format}`;
+    }
 
-    const navigateToComponents = () => {
-        if(generatedComponent) {
-            router.push('/components');
+    const downloadQrCode = async (format: 'png' | 'svg') => {
+        if (!qrData || !componentId) return;
+        const url = getQrCodeUrl(format);
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok.');
+            const blob = await response.blob();
+            saveAs(blob, `component-${componentId}-qrcode.${format}`);
+            toast({
+                title: 'Download Started',
+                description: `QR Code (${format.toUpperCase()}) is downloading.`
+            })
+        } catch (error) {
+            console.error('Failed to download QR code:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Download Failed',
+                description: 'Could not download the QR code. Please try again.'
+            })
         }
     }
+
 
   return (
     <>
@@ -170,18 +196,29 @@ export default function AddComponentPage() {
                     </Button>
                 </form>
             </Form>
+            
+            {qrData && (
+                <div className="mt-6 pt-6 border-t">
+                    <h3 className="text-lg font-headline mb-4 text-center">QR Code Preview</h3>
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                        <div className="p-4 bg-white rounded-lg border">
+                           <Image src={getQrCodeUrl('png')} alt={`QR Code for ${componentId}`} width={200} height={200} />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                             <Button onClick={() => downloadQrCode('png')}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download PNG
+                            </Button>
+                            <Button variant="secondary" onClick={() => downloadQrCode('svg')}>
+                                <FileType className="mr-2 h-4 w-4" />
+                                Download SVG
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
             </CardContent>
         </Card>
-         <QrCodeDialog 
-            component={generatedComponent}
-            isOpen={!!generatedComponent}
-            onOpenChange={(isOpen) => {
-                if (!isOpen) {
-                    setGeneratedComponent(null);
-                    navigateToComponents();
-                }
-            }}
-        />
     </>
   );
 }
