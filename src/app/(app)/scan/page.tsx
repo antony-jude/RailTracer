@@ -113,20 +113,26 @@ export default function ScanPage() {
             } else {
                 data.name = fn.trim();
             }
-        }
-        if (sanitizedLine.startsWith('CATEGORIES:')) data.type = sanitizedLine.substring(11).trim();
-        if (sanitizedLine.startsWith('URL:')) data.url = sanitizedLine.substring(4).trim();
-        if (sanitizedLine.startsWith('NOTE:')) {
-            const notes = sanitizedLine.substring(5).split('\\n');
+        } else if (sanitizedLine.startsWith('CATEGORIES:')) {
+            data.type = sanitizedLine.substring(11).trim();
+        } else if (sanitizedLine.startsWith('URL:')) {
+            data.url = sanitizedLine.substring(4).trim();
+        } else if (sanitizedLine.startsWith('NOTE:')) {
+            const notesText = sanitizedLine.substring(5);
+            // Split by unescaped newlines, but handle escaped ones within a note
+            const notes = notesText.split(/(?<!\\)\\n/g);
             notes.forEach(note => {
-                const [key, value] = note.split(': ');
-                if (key && value) {
-                    const val = value.trim();
-                    if (key === 'Location') data.location = val;
-                    if (key === 'Vendor') data.vendor = val;
-                    if (key === 'Install Date') data.installDate = new Date().toISOString();
-                    if (key === 'Warranty Until') data.warrantyUntil = new Date(val).toISOString();
-                    if (key === 'Supply Date') data.supplyDate = new Date(val).toISOString();
+                const parts = note.split(': ');
+                if (parts.length >= 2) {
+                    const key = parts[0];
+                    const value = parts.slice(1).join(': ').trim();
+                    if (key === 'Location') data.location = value;
+                    else if (key === 'Vendor') data.vendor = value;
+                    else if (key === 'Install Date') data.installDate = new Date(value).toISOString();
+                    else if (key === 'Warranty Until') data.warrantyUntil = new Date(value).toISOString();
+                    else if (key === 'Supply Date') data.supplyDate = new Date(value).toISOString();
+                } else if (note.includes('--MANUFACTURER--') || note.includes('--LAST INSPECTION--')) {
+                    // This is a header, do nothing.
                 }
             });
         }
