@@ -67,7 +67,7 @@ END:VCARD
         });
     };
     
-    const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
+    const getQrCodeUrl = (format: 'png' | 'svg' = 'png', forDisplay = true) => {
         if (!qrData) return '';
         // Use a different QR generator service that supports dotted style
         const base = 'https://api.qr-code-generator.com/v1/create';
@@ -80,18 +80,25 @@ END:VCARD
             'marker-right-template': 'circle',
             'qr-code-logo': 'scan-me-square'
         });
+        if (!forDisplay) {
+            params.set('download', '1');
+        }
         return `${base}?${params.toString()}`;
     }
 
-    const downloadQrCode = async (format: 'png' | 'svg') => {
+    const downloadQrCode = (format: 'png' | 'svg') => {
         if (!qrData || !componentId) return;
-        const url = getQrCodeUrl(format);
+        const url = getQrCodeUrl(format, false);
+        
         try {
-            // This API requires a different approach for downloading, fetch->blob is simpler.
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network response was not ok.');
-            const blob = await response.blob();
-            saveAs(blob, `component-${componentId}-qrcode.${format}`);
+            // Instead of fetching, create an anchor tag and click it to trigger download
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `component-${componentId}-qrcode.${format}`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
             toast({
                 title: 'Download Started',
                 description: `QR Code (${format.toUpperCase()}) is downloading.`
@@ -234,3 +241,5 @@ END:VCARD
     </>
   );
 }
+
+    

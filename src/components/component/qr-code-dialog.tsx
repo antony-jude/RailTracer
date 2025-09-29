@@ -11,7 +11,6 @@ import Image from 'next/image';
 import type { RailwayComponent } from '@/lib/types';
 import { Button } from "../ui/button";
 import { Download, FileType } from "lucide-react";
-import { saveAs } from 'file-saver';
 import { useToast } from "@/hooks/use-toast";
 
 type QrCodeDialogProps = {
@@ -41,7 +40,7 @@ URL:${component.qrCode}
 END:VCARD
   `.trim();
 
-  const getQrCodeUrl = (format: 'png' | 'svg' = 'png') => {
+  const getQrCodeUrl = (format: 'png' | 'svg' = 'png', forDisplay = true) => {
     const base = 'https://api.qr-code-generator.com/v1/create';
     const params = new URLSearchParams({
         'qr-code-text': qrData,
@@ -52,17 +51,23 @@ END:VCARD
         'marker-right-template': 'circle',
         'qr-code-logo': 'scan-me-square'
     });
+     if (!forDisplay) {
+        params.set('download', '1');
+    }
     return `${base}?${params.toString()}`;
   }
 
-  const downloadQrCode = async (format: 'png' | 'svg') => {
+  const downloadQrCode = (format: 'png' | 'svg') => {
       if (!qrData || !component.id) return;
-      const url = getQrCodeUrl(format);
+      const url = getQrCodeUrl(format, false);
       try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error('Network response was not ok.');
-          const blob = await response.blob();
-          saveAs(blob, `component-${component.id}-qrcode.${format}`);
+          const link = document.createElement('a');
+          link.href = url;
+          link.setAttribute('download', `component-${component.id}-qrcode.${format}`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
           toast({
               title: 'Download Started',
               description: `QR Code (${format.toUpperCase()}) is downloading.`
@@ -104,3 +109,5 @@ END:VCARD
     </Dialog>
   );
 }
+
+    
