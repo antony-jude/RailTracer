@@ -65,8 +65,12 @@ export function MaterialStatusDetector() {
     try {
       const response = await detectMaterialStatus({ photoDataUri: selectedImage });
       setResult(response);
-    } catch (err) {
-      setError('Failed to analyze image. Please try again.');
+    } catch (err: any) {
+      if (err.message && err.message.includes('503')) {
+        setError('The AI analysis service is temporarily unavailable. Please try again in a few moments.');
+      } else {
+        setError('Failed to analyze image. Please try again.');
+      }
       console.error(err);
     } finally {
       setIsLoading(false);
