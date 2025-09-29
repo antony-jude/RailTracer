@@ -3,8 +3,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, QrCode, Wrench, Globe, PlusCircle } from 'lucide-react';
+import { LayoutDashboard, QrCode, Wrench, Globe, PlusCircle, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { firebaseConfig } from '@/lib/firebase';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -13,6 +14,12 @@ const navItems = [
   { href: '/add-component', icon: PlusCircle, label: 'Add Component'},
   { href: '/portals', icon: Globe, label: 'External Portals' },
 ];
+
+const consoleLink = {
+    href: `https://console.firebase.google.com/project/${firebaseConfig.projectId}/overview`,
+    icon: Database,
+    label: 'Firebase Console',
+};
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -37,8 +44,8 @@ export function AppSidebar() {
                 <ul className="grid items-start px-4 text-sm font-medium">
                     {navItems.map(({ href, icon: Icon, label }) => {
                         const isActive = href === '/components' 
-                            ? isComponentsPath(pathname) 
-                            : pathname === href || pathname.startsWith(`${href}/`);
+                            ? isComponentsPath(pathname) && !pathname.includes('add')
+                            : pathname === href || (href !== '/dashboard' && pathname.startsWith(`${href}/`));
                         return (
                             <li key={href}>
                                 <Link
@@ -54,6 +61,22 @@ export function AppSidebar() {
                             </li>
                         );
                     })}
+                </ul>
+                <div className="my-4 px-4">
+                    <div className="h-px bg-border" />
+                </div>
+                <ul className="grid items-start px-4 text-sm font-medium">
+                    <li>
+                        <Link
+                            href={consoleLink.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary hover:bg-secondary"
+                        >
+                            <consoleLink.icon className="h-5 w-5" />
+                            {consoleLink.label}
+                        </Link>
+                    </li>
                 </ul>
         </nav>
     </div>

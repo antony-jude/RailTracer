@@ -47,13 +47,20 @@ export default function AddComponentPage() {
     const onSubmit = (data: ComponentFormValues) => {
         const qrCodeUrl = `${window.location.origin}/c/${data.id}`;
         
+        const noteContent = [
+            `Location:${data.location}`,
+            `Vendor:${data.vendor}`,
+            `Supply Date:${new Date(data.supplyDate).toLocaleDateString()}`,
+            `Warranty Until:${new Date(data.warrantyUntil).toLocaleDateString()}`
+        ].join('\\n');
+
         const vCardData = `
 BEGIN:VCARD
 VERSION:3.0
 FN:${data.name} (${data.id})
 ORG:RailTracer Component
 CATEGORIES:${data.type}
-NOTE;CHARSET=utf-8:Location: ${data.location}\\nStatus: Good
+NOTE;CHARSET=utf-8:${noteContent}
 URL:${qrCodeUrl}
 END:VCARD
         `.trim();

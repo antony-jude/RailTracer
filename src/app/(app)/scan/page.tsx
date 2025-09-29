@@ -94,11 +94,9 @@ export default function ScanPage() {
     }
   }, [toast]);
 
-  const parseVCard = (vcard: string): Partial<Omit<RailwayComponent, 'currentState' | 'history'>> & { url?: string; currentState: ComponentState } => {
+  const parseVCard = (vcard: string): Partial<Omit<RailwayComponent, 'currentState' | 'history'>> & { url?: string } => {
     const lines = vcard.split('\n');
-    const data: any = {
-      vendor: 'Unknown',
-    };
+    const data: any = {};
     let noteContent = '';
     
     lines.forEach(line => {
@@ -109,8 +107,6 @@ export default function ScanPage() {
             if (match) {
                 data.name = match[1].trim();
                 data.id = match[2].trim();
-            } else {
-                data.name = fn.trim();
             }
         } else if (sanitizedLine.startsWith('CATEGORIES:')) {
             data.type = sanitizedLine.substring(11).trim();
@@ -124,20 +120,19 @@ export default function ScanPage() {
     if (noteContent) {
         const notes = noteContent.replace(/\\n/g, '\n').split('\n');
         notes.forEach(note => {
-            const noteParts = note.split(': ');
+            const noteParts = note.split(':');
             if (noteParts.length >= 2) {
-                const key = noteParts[0].trim();
-                const value = noteParts.slice(1).join(': ').trim();
-                if (key === 'Location') data.location = value;
-                else if (key === 'Vendor') data.vendor = value;
-                else if (key === 'Install Date') data.installDate = new Date(value).toISOString();
-                else if (key === 'Warranty Until') data.warrantyUntil = new Date(value).toISOString();
-                else if (key === 'Supply Date') data.supplyDate = new Date(value).toISOString();
+                const key = noteParts[0].trim().toLowerCase();
+                const value = noteParts.slice(1).join(':').trim();
+                if (key === 'location') data.location = value;
+                else if (key === 'vendor') data.vendor = value;
+                else if (key === 'supply date') data.supplyDate = new Date(value).toISOString();
+                else if (key === 'warranty until') data.warrantyUntil = new Date(value).toISOString();
+                else if (key === 'install date') data.installDate = new Date(value).toISOString();
             }
         });
     }
-
-    data.currentState = 'Good'; // New components default to good
+    
     return data;
   }
 

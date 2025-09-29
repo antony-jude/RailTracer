@@ -28,13 +28,19 @@ export function QrCodeDialog({ component, isOpen, onOpenChange }: QrCodeDialogPr
   
   const publicUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/c/${component.id}`;
 
+  const noteContent = [
+      `Location:${component.location}`,
+      `Vendor:${component.vendor}`,
+      `Status:${component.currentState}`
+  ].join('\\n');
+
   const vCardData = `
 BEGIN:VCARD
 VERSION:3.0
 FN:${component.name} (${component.id})
 ORG:RailTracer Component
 CATEGORIES:${component.type}
-NOTE;CHARSET=utf-8:Location: ${component.location}\\nStatus: ${component.currentState}
+NOTE;CHARSET=utf-8:${noteContent}
 URL:${publicUrl}
 END:VCARD
   `.trim();
