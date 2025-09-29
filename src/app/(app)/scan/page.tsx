@@ -130,8 +130,81 @@ export default function ScanPage() {
         return data;
     }
 
+    const handleScan = async (scannedData: string) => {
+        setScanActive(false);
+        toast({ title: "QR Code Found", description: "Processing..." });
 
-    const tick = async () => {
+        let componentId: string | undefined;
+        let isNewComponent = false;
+
+        // 1. Try to parse as vCard for new components
+        if (scannedData.startsWith('BEGIN:VCARD')) {
+            const vcardData = parseVCard(scannedData);
+            if (vcardData.id) {
+                const existingComponent = await getComponentById(vcardData.id);
+                if (!existingComponent) {
+                    const newComponent: Omit<RailwayComponent, 'id'> = {
+                        id: vcardData.id!,
+                        name: vcardData.name || 'Unknown',
+                        type: vcardData.type || 'Unknown',
+                        location: vcardData.location || 'Unknown',
+                        vendor: vcardData.vendor || 'Unknown',
+                        supplyDate: vcardData.supplyDate || new Date().toISOString(),
+                        warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
+                        installDate: new Date().toISOString(), // Set install date on first scan
+                        currentState: 'Verified',
+                        qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
+                        history: [],
+                        geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
+                    };
+                    await addComponent(newComponent);
+                    isNewComponent = true;
+                    toast({
+                        title: "New Component Registered",
+                        description: `Component ${vcardData.id} has been added.`
+                    });
+                }
+                componentId = vcardData.id;
+            }
+        } else {
+            // 2. Try to parse as a URL for existing components
+            try {
+                const url = new URL(scannedData);
+                const pathParts = url.pathname.split('/');
+                if (pathParts.length >= 3 && pathParts[pathParts.length - 2] === 'components') {
+                    componentId = pathParts[pathParts.length - 1];
+                }
+            } catch (e) {
+                // Not a valid URL, will be handled by the final check
+            }
+        }
+
+        // 3. Navigate or show error
+        if (componentId) {
+            if (!isNewComponent && currentPosition) {
+                await updateComponent(componentId, { 
+                    geoPosition: new GeoPoint(currentPosition.latitude, currentPosition.longitude),
+                    location: `Scanned at ${currentPosition.latitude.toFixed(4)}, ${currentPosition.longitude.toFixed(4)}`
+                });
+            }
+            toast({
+                title: "Scan Successful",
+                description: `Navigating to component ${componentId}...`
+            });
+            router.push(`/components/${componentId}`);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: "Invalid QR Code",
+                description: "This QR code is not recognized. Please try again.",
+            });
+            // Briefly show the error, then restart scanning
+            setTimeout(() => setScanActive(true), 3000);
+        }
+    };
+
+
+    const tick = () => {
       if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current && scanActive) {
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -147,79 +220,7 @@ export default function ScanPage() {
             });
 
             if (code) {
-                setScanActive(false);
-                
-                try {
-                    let componentId: string | undefined;
-
-                    // 1. Try parsing as vCard for new components
-                    if (code.data.startsWith('BEGIN:VCARD')) {
-                        const vcardData = parseVCard(code.data);
-                        componentId = vcardData.id;
-
-                        if (componentId) {
-                            const existingComponent = await getComponentById(componentId);
-                            if (!existingComponent) {
-                                const newComponent: Omit<RailwayComponent, 'id'> = {
-                                    id: vcardData.id!,
-                                    name: vcardData.name || 'Unknown',
-                                    type: vcardData.type || 'Unknown',
-                                    location: vcardData.location || 'Unknown',
-                                    vendor: vcardData.vendor || 'Unknown',
-                                    supplyDate: vcardData.supplyDate || new Date().toISOString(),
-                                    warrantyUntil: vcardData.warrantyUntil || new Date().toISOString(),
-                                    installDate: new Date().toISOString(), // Set install date on first scan
-                                    currentState: 'Verified',
-                                    qrCode: vcardData.url || `${window.location.origin}/components/${vcardData.id}`,
-                                    history: [],
-                                    geoPosition: currentPosition ? new GeoPoint(currentPosition.latitude, currentPosition.longitude) : undefined,
-                                };
-                                await addComponent(newComponent);
-                                toast({
-                                    title: "New Component Registered",
-                                    description: `Component ${componentId} has been added to the database.`
-                                });
-                            }
-                        }
-                    } else { 
-                        // 2. Try parsing as URL for existing components
-                        try {
-                            const url = new URL(code.data);
-                            const pathParts = url.pathname.split('/');
-                            const potentialId = pathParts[pathParts.length - 1];
-                            if (pathParts.includes('components') && potentialId) {
-                                componentId = potentialId;
-                            }
-                        } catch (e) {
-                           // Not a valid URL, will be handled by the final check
-                        }
-                    }
-
-                    if (componentId) {
-                         if (currentPosition) {
-                            await updateComponent(componentId, { 
-                                geoPosition: new GeoPoint(currentPosition.latitude, currentPosition.longitude),
-                                location: `Scanned at ${currentPosition.latitude.toFixed(4)}, ${currentPosition.longitude.toFixed(4)}`
-                            });
-                        }
-                        toast({
-                            title: "QR Code Scanned",
-                            description: `Navigating to component ${componentId}...`
-                        });
-                        router.push(`/components/${componentId}`);
-                    } else {
-                        throw new Error("Invalid QR code format.");
-                    }
-                } catch(e) {
-                    console.error("Scan error:", e);
-                    toast({
-                        variant: 'destructive',
-                        title: "Invalid QR Code",
-                        description: "This QR code is not a valid RailTracer component code.",
-                    });
-                     // Briefly show the error, then restart scanning
-                    setTimeout(() => setScanActive(true), 3000);
-                }
+                handleScan(code.data);
             }
         }
       }
@@ -246,7 +247,7 @@ export default function ScanPage() {
                 </div>
                 <CardTitle className="mt-4 font-headline text-2xl">Scan Component QR Code</CardTitle>
                 <CardDescription>
-                    {scanActive ? "Point your camera at a QR code to scan it." : "Scan complete. Processing..."}
+                    {scanActive ? "Point your camera at a QR code to scan it." : "Processing..."}
                 </CardDescription>
             </CardHeader>
             <CardContent>
