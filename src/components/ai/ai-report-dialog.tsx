@@ -8,8 +8,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, Download } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
+import { Button } from "../ui/button";
+import { saveAs } from 'file-saver';
 
 type AiReportDialogProps = {
   isOpen: boolean;
@@ -19,6 +21,14 @@ type AiReportDialogProps = {
 };
 
 export function AiReportDialog({ isOpen, onOpenChange, report, isLoading }: AiReportDialogProps) {
+
+  const handleDownloadReport = () => {
+    if (!report) return;
+
+    const blob = new Blob([report], { type: 'text/markdown;charset=utf-8' });
+    saveAs(blob, `ai-component-report-${Date.now()}.md`);
+  };
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-2xl">
@@ -47,6 +57,12 @@ export function AiReportDialog({ isOpen, onOpenChange, report, isLoading }: AiRe
         </ScrollArea>
         
         <AlertDialogFooter>
+          {report && !isLoading && (
+            <Button variant="secondary" onClick={handleDownloadReport}>
+              <Download className="mr-2 h-4 w-4" />
+              Download Report
+            </Button>
+          )}
           <AlertDialogAction onClick={() => onOpenChange(false)}>Close</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
