@@ -2,6 +2,8 @@
 
 **RailTracer** is a next-generation Railway Asset Tracking and Management System built with Next.js, Firebase, and Google Genkit. It provides an intuitive, industrial-grade interface for field technicians, inspectors, and railway admins to manage, scan, inspect, and analyze railway infrastructure components.
 
+🔗 **Live Deployment:** [rail-tracer.vercel.app](https://rail-tracer.vercel.app/)
+
 ---
 
 ## ✨ Features
