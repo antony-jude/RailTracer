@@ -11,23 +11,21 @@
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## 📸 Project Screenshots & User Interface
 
-RailTracer operates on a serverless microservices design pattern. The Next.js App Router coordinates static dashboard components and dynamic server actions. 
+Here is a visual overview of the **RailTracer** application interface, capturing key dashboards and user portals:
 
-Here is how data flows through the application during an asset inspection:
+### 🏠 1. Portal Entrance (Secure Login)
+The gateway for both public asset tracking (via scanning) and secure administrator/technician authentication.
+![Home Page Login](docs/home_page.png)
 
-```mermaid
-graph TD
-    A[Field Inspector Camera / Scan UI] -->|1. Scan QR / Base64 Image| B[Next.js Server Action]
-    B -->|2. Query/Write Records| C[(Firebase Firestore)]
-    B -->|3. Trigger AI Agent Flows| D[Google Genkit SDK]
-    D -->|4. Structure Schema Validation| E[Zod Validation Layer]
-    E -->|5. Multimodal Reasoning API| F[Gemini 2.5 Flash]
-    F -->|6. Return Typed JSON| D
-    D -->|7. Recommended Next Actions| B
-    B -->|8. Sync UI Update| A
-```
+### 📊 2. Analytics Dashboard
+A data-rich workspace displaying key metrics, component health distributions (Verified, Unverified, Damaged), and recent activities.
+![Dashboard Screenshot](docs/dashboard.png)
+
+### ⚙️ 3. Asset Components Directory
+A clean interface for technicians to view and query railway components.
+![Components Directory](docs/components.png)
 
 ---
 
